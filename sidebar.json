@@ -1,0 +1,27 @@
+[
+  {
+    "type": "item",
+    "label": "Membership Requests 12",
+    "path": "https://ngosoftware.in/software/YWRtaW5TaG93SW5hY3RpdmVVc2VyXzQwMzIzYzI0ZjYwNGNmMTQyODRjNGM2OTJjZGE2OWI5YzY4MTAzODVmODU3YTVmMGU4MzdkMmI2MmZlOTg0NzFhYWU4NTlmMTM2YTIwZTM2ZTdiMzRmZDI0Y2M3NWZhZTM0YjI="
+  },
+  {
+    "type": "item",
+    "label": "Active Members 16",
+    "path": "https://ngosoftware.in/software/YWRtaW5TaG93VmVyaWZpZVVzZXJfNDAzMjNjMjRmNjA0Y2YxNDI4NGM0YzY5MmNkYTY5YjljNjgxMDM4NWY4NTdhNWYwZTgzN2QyYjYyZmU5ODQ3MWFhZTg1OWYxMzZhMjBlMzZlN2IzNGZkMjRjYzc1ZmFlMzRiMg=="
+  },
+  {
+    "type": "header",
+    "label": "ftware/expense_list\" style=\"color:black; background: #c6c8cb !important; border-bottom: 1px solid #1f2937;\"> Expense Data",
+    "submenu": []
+  },
+  {
+    "type": "header",
+    "label": "News Management",
+    "submenu": [
+      {
+        "label": "Create News",
+        "path": "https://ngosoftware.in/software/Create-News"
+      }
+    ]
+  }
+]

@@ -1,0 +1,487 @@
+import { useRoute, useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { FileText, Award, CreditCard, Share2, User, QrCode } from "lucide-react";
+import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { toast } from "sonner";
+
+export default function MemberDetailsPage() {
+  const [, params] = useRoute("/admin/users/detail/:id");
+  const [, setLocation] = useLocation();
+  const userId = params?.id ? parseInt(params.id) : 0;
+
+  const utils = trpc.useUtils();
+  
+  // Upgrade member to lifetime mutation
+  const upgradeMutation = trpc.membership.upgradeToLifetime.useMutation({
+    onSuccess: () => {
+      utils.membership.getMemberDetails.invalidate({ userId });
+      toast.success("Membership successfully upgraded to Lifetime!");
+    }
+  });
+
+  // Queries
+  const { data: member, isLoading } = trpc.membership.getMemberDetails.useQuery(
+    { userId },
+    { enabled: !!userId }
+  );
+
+  const { data: certificates } = trpc.document.getCertificates.useQuery(
+    { recipientId: userId },
+    { enabled: !!userId }
+  );
+
+  const { data: appointmentLetters } = trpc.document.getAppointmentLetters.useQuery(
+    { recipientId: userId },
+    { enabled: !!userId }
+  );
+
+  const { data: idCards } = trpc.document.getIDCards.useQuery(
+    { memberId: member?.id },
+    { enabled: !!member?.id }
+  );
+
+  // Modal states
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
+  const [isIDCardModalOpen, setIsIDCardModalOpen] = useState(false);
+
+  if (isLoading) {
+    return <div className="flex h-screen items-center justify-center">Loading member details...</div>;
+  }
+
+  if (!member) {
+    return <div className="flex h-screen items-center justify-center text-red-500">Member not found.</div>;
+  }
+
+  const latestLetter = appointmentLetters && appointmentLetters.length > 0 ? appointmentLetters[0] : null;
+  const membershipCert = certificates?.find(c => c.certificateType === "membership" || c.certificateType === "volunteer" || c.certificateType === "achievement");
+  const latestIDCard = idCards && idCards.length > 0 ? idCards[0] : null;
+
+  const Row = ({ icon: Icon, label, value }: { icon?: any; label: string; value: React.ReactNode }) => (
+    <div className="flex border-b border-gray-200">
+      <div className="w-1/3 bg-emerald-50/50 p-3 flex items-center gap-2 border-r border-gray-200 font-medium text-gray-700 text-sm">
+        {Icon && <Icon className="w-4 h-4 text-teal-700" />}
+        {label}
+      </div>
+      <div className="w-2/3 p-3 text-sm text-gray-600 bg-white flex items-center">
+        {value || "N/A"}
+      </div>
+    </div>
+  );
+
+  const SectionHeader = ({ title }: { title: string }) => (
+    <div className="bg-teal-700 text-white p-2 text-center font-semibold text-sm">
+      {title}
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center py-8 px-4">
+      <div className="w-full max-w-2xl bg-white shadow-lg overflow-hidden flex flex-col">
+        
+        {/* Header Section */}
+        <div className="bg-gray-50 flex flex-col items-center py-6 border-b border-gray-200">
+          <div className="w-24 h-24 rounded-full border-4 border-red-500 overflow-hidden mb-3 bg-white flex items-center justify-center">
+            {member.user?.profileImage ? (
+              <img src={member.user.profileImage} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <img src="/valmiki-logo.jpg" alt="Logo" className="w-full h-full object-cover" />
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-gray-800 font-semibold">
+            <User className="w-4 h-4" />
+            Details Of {member.user?.name || "Member"}
+          </div>
+        </div>
+
+        {/* Content Body */}
+        <div className="p-4 flex flex-col gap-4">
+          
+          {/* Active Documents */}
+          <div className="border border-teal-700 rounded overflow-hidden">
+            <SectionHeader title="Active Documents" />
+            <div className="bg-white p-4">
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                <Button 
+                  className="bg-teal-600 hover:bg-teal-700 text-white text-xs h-8 px-2 flex items-center justify-center gap-1"
+                  onClick={() => {
+                    if (latestLetter) {
+                      setIsAppointmentModalOpen(true);
+                    } else {
+                      toast.error("No appointment letter has been issued for this member yet.");
+                    }
+                  }}
+                >
+                  <FileText className="w-3 h-3" /> Appointment Letter
+                </Button>
+                <Button 
+                  className="bg-teal-600 hover:bg-teal-700 text-white text-xs h-8 px-2 flex items-center justify-center gap-1"
+                  onClick={() => {
+                    if (membershipCert) {
+                      setIsCertificateModalOpen(true);
+                    } else {
+                      toast.error("No membership certificate has been issued for this member yet.");
+                    }
+                  }}
+                >
+                  <Award className="w-3 h-3" /> Membership Certificate
+                </Button>
+                <Button 
+                  className="bg-teal-600 hover:bg-teal-700 text-white text-xs h-8 px-2 flex items-center justify-center gap-1"
+                  onClick={() => {
+                    if (latestIDCard) {
+                      setIsIDCardModalOpen(true);
+                    } else {
+                      toast.error("No ID Card has been generated for this member yet.");
+                    }
+                  }}
+                >
+                  <CreditCard className="w-3 h-3" /> ID Card
+                </Button>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <Button 
+                  variant="outline" 
+                  className="bg-[#8cc63f] hover:bg-[#7ab131] text-white border-none text-xs h-8 px-2 flex items-center justify-center gap-1"
+                  onClick={() => {
+                    if (latestLetter) {
+                      window.open(`/verify/certificate/${latestLetter.qrCode}`, '_blank');
+                    } else {
+                      toast.error("Issue appointment letter first to share.");
+                    }
+                  }}
+                >
+                  Share on <Share2 className="w-3 h-3 ml-1" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="bg-[#8cc63f] hover:bg-[#7ab131] text-white border-none text-xs h-8 px-2 flex items-center justify-center gap-1"
+                  onClick={() => {
+                    if (membershipCert) {
+                      window.open(`/verify/certificate/${membershipCert.qrCode}`, '_blank');
+                    } else {
+                      toast.error("Issue membership certificate first to share.");
+                    }
+                  }}
+                >
+                  Share on <Share2 className="w-3 h-3 ml-1" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="bg-[#8cc63f] hover:bg-[#7ab131] text-white border-none text-xs h-8 px-2 flex items-center justify-center gap-1"
+                  onClick={() => {
+                    if (latestIDCard) {
+                      window.open(`/verify/idcard/${latestIDCard.qrCode}`, '_blank');
+                    } else {
+                      toast.error("Issue ID card first to share.");
+                    }
+                  }}
+                >
+                  Share on <Share2 className="w-3 h-3 ml-1" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Registration Details */}
+          <div className="border border-teal-700 rounded overflow-hidden">
+            <SectionHeader title="Registration details" />
+            <div className="flex flex-col">
+              <Row icon={FileText} label="Reg No:" value={member.membershipNumber} />
+              <Row icon={FileText} label="Reg Date:" value={member.joinDate ? format(new Date(member.joinDate), "dd-MM-yyyy") : ""} />
+              <Row icon={FileText} label="Account's Status:" value={<span className="capitalize">{member.status}</span>} />
+              <Row icon={User} label="User Type:" value={<span className="capitalize">{member.user?.role}</span>} />
+              <Row icon={User} label="Verified By:" value="Admin" />
+              <Row icon={FileText} label="Membership Type:" value={
+                <div className="flex items-center gap-2">
+                  <span className="capitalize">{member.membershipType}</span>
+                  {member.membershipType !== 'lifetime' && (
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="h-6 text-[10px] px-2 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                      onClick={() => upgradeMutation.mutate({ membershipId: member.id })}
+                      disabled={upgradeMutation.isPending}
+                    >
+                      Grant Lifetime
+                    </Button>
+                  )}
+                </div>
+              } />
+            </div>
+          </div>
+
+          {/* Personal Information */}
+          <div className="border border-teal-700 rounded overflow-hidden">
+            <SectionHeader title="Personal Information" />
+            <div className="flex flex-col">
+              <Row icon={User} label="Name:" value={member.user?.name} />
+              <Row icon={User} label="Father Name:" value={member.user?.fatherName} />
+              <Row icon={FileText} label="Email:" value={member.user?.email} />
+              <Row icon={FileText} label="Mobile:" value={member.user?.phone} />
+              <Row icon={FileText} label="Date Of Birth:" value={member.user?.dob ? format(new Date(member.user.dob), "dd-MM-yyyy") : ""} />
+              <Row icon={FileText} label="Aadhar Card No.:" value={member.user?.aadharNumber} />
+            </div>
+          </div>
+
+          {/* Demographic Information */}
+          <div className="border border-teal-700 rounded overflow-hidden">
+            <SectionHeader title="Demographic Information" />
+            <div className="flex flex-col">
+              <Row icon={FileText} label="Gender:" value={<span className="capitalize">{member.user?.gender}</span>} />
+              <Row icon={FileText} label="Married Status:" value={<span className="capitalize">{member.user?.maritalStatus}</span>} />
+              <Row icon={FileText} label="Category:" value={member.user?.category} />
+              <Row icon={FileText} label="Blood Group:" value={member.user?.bloodGroup} />
+            </div>
+          </div>
+
+          {/* Professional Information */}
+          <div className="border border-teal-700 rounded overflow-hidden">
+            <SectionHeader title="Professional Information" />
+            <div className="flex flex-col">
+              <Row icon={User} label="Occupation:" value={member.user?.occupation} />
+            </div>
+          </div>
+
+          {/* Residential Address Details */}
+          <div className="border border-teal-700 rounded overflow-hidden">
+            <SectionHeader title="Residential Address Details" />
+            <div className="flex flex-col">
+              <Row icon={FileText} label="Address:" value={member.user?.address} />
+              <Row icon={FileText} label="Pin Code:" value={member.user?.pinCode} />
+              <Row icon={FileText} label="State:" value={member.user?.state} />
+              <Row icon={FileText} label="City:" value={member.user?.city} />
+            </div>
+          </div>
+
+          {/* Media Upload */}
+          <div className="border border-teal-700 rounded overflow-hidden">
+            <SectionHeader title="Media Upload" />
+            <div className="flex border-b border-gray-200">
+              <div className="w-1/3 bg-emerald-50/50 p-3 flex items-center gap-2 border-r border-gray-200 font-medium text-gray-700 text-sm">
+                <FileText className="w-4 h-4 text-teal-700" />
+                User Profile:
+              </div>
+              <div className="w-2/3 p-3 bg-white flex items-center justify-center">
+                {member.user?.profileImage ? (
+                  <img src={member.user.profileImage} alt="Profile" className="w-32 h-32 object-cover border border-gray-300" />
+                ) : (
+                  <div className="w-32 h-32 bg-gray-200 flex items-center justify-center text-gray-400 text-xs border border-gray-300">
+                    No Image
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Role Applying For */}
+          <div className="border border-teal-700 rounded overflow-hidden">
+            <SectionHeader title="Role Applying For in the Organization" />
+            <div className="flex flex-col border-b-0">
+              <Row icon={Award} label="Designation:" value={member.user?.designation || "Member"} />
+            </div>
+          </div>
+
+          {/* Go Back Button */}
+          <Button 
+            className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold mt-2"
+            onClick={() => setLocation("/admin/users/active")}
+          >
+            Go Back
+          </Button>
+
+        </div>
+        
+        {/* Footer */}
+        <div className="bg-teal-800 text-white text-center py-3 text-xs leading-relaxed mt-auto">
+          © 2026 Digital NGO-Software<br/>
+          Made by Star Marketing
+        </div>
+      </div>
+
+      {/* ==================== PREVIEW MODALS ==================== */}
+
+      {/* 1. Appointment Letter Preview Modal */}
+      <Dialog open={isAppointmentModalOpen} onOpenChange={setIsAppointmentModalOpen}>
+        <DialogContent className="max-w-xl bg-white p-6 max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-teal-800 flex items-center gap-2">
+              <FileText className="w-5 h-5" /> Appointment Letter Preview
+            </DialogTitle>
+            <DialogDescription>
+              Preview of official appointment letter for {member.user?.name}.
+            </DialogDescription>
+          </DialogHeader>
+
+          {latestLetter && (
+            <div className="py-4 flex justify-center">
+              <div className="relative w-full max-w-lg aspect-[1133/1600] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
+                <img 
+                  src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611664/ngo-management/templates/appointment_letter_template.jpg" 
+                  alt="Appointment Letter Template" 
+                  className="w-full h-full object-cover" 
+                />
+                
+                {/* Overlays */}
+                <div className="absolute top-[16.5%] left-[10%] font-mono text-[8px] sm:text-[11px] text-gray-800 font-semibold">
+                  Ref: {latestLetter.letterNumber}
+                </div>
+                <div className="absolute top-[16.5%] right-[10%] font-mono text-[8px] sm:text-[11px] text-gray-800 font-semibold">
+                  Date: {format(new Date(latestLetter.appointmentDate), "dd/MM/yyyy")}
+                </div>
+                <div className="absolute top-[21.5%] left-[10%] text-left text-[9px] sm:text-[12px] text-gray-800 leading-snug whitespace-pre-line font-medium">
+                  To,<br />
+                  <strong>{member.user?.name}</strong><br />
+                  {member.user?.address || "NGO Member Address"}<br />
+                  {member.user?.city || ""}, {member.user?.state || ""} {member.user?.pinCode || ""}
+                </div>
+                
+                <div className="absolute top-[32.5%] left-[10%] right-[10%] text-center text-[9px] sm:text-[13px] font-bold text-slate-900 border-b border-gray-300 pb-1">
+                  SUB: APPOINTMENT FOR THE POST OF "{latestLetter.position.toUpperCase()}"
+                </div>
+                
+                <div className="absolute top-[38.5%] left-[10%] right-[10%] text-justify text-[7px] sm:text-[11px] text-slate-700 leading-relaxed whitespace-pre-line max-h-[42%] overflow-y-auto">
+                  {latestLetter.letterContent || `Dear ${member.user?.name},\n\nWe are pleased to appoint you for the post of ${latestLetter.position} in the ${latestLetter.department || 'Volunteer'} department of Valmiki Samaj Charitable Trust.\n\nYour appointment is effective from ${format(new Date(latestLetter.appointmentDate), "dd MMMM yyyy")}. We trust that your dedication and skills will be highly beneficial to our organization's mission.`}
+                </div>
+                
+                <div className="absolute bottom-[9%] left-[10%] text-[8px] sm:text-[10px] font-bold text-slate-800 leading-tight">
+                  Authorized Signatory<br />
+                  <span className="text-gray-500 font-normal">Valmiki Samaj Trust</span>
+                </div>
+
+                <div className="absolute bottom-[8%] right-[10%]">
+                  <div className="w-12 h-12 bg-white p-0.5 border rounded flex items-center justify-center">
+                    <QrCode className="w-10 h-10 text-teal-800 opacity-60" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button className="w-full bg-teal-700 hover:bg-teal-800 text-white" onClick={() => setIsAppointmentModalOpen(false)}>
+              Close Preview
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 2. Membership Certificate Preview Modal */}
+      <Dialog open={isCertificateModalOpen} onOpenChange={setIsCertificateModalOpen}>
+        <DialogContent className="max-w-2xl bg-white p-6">
+          <DialogHeader>
+            <DialogTitle className="text-teal-800 flex items-center gap-2">
+              <Award className="w-5 h-5" /> Membership Certificate Preview
+            </DialogTitle>
+          </DialogHeader>
+
+          {membershipCert && (
+            <div className="py-4 flex justify-center">
+              <div className="relative w-full max-w-md aspect-[904/1354] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
+                <img 
+                  src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611666/ngo-management/templates/membership_certificate_template.jpg" 
+                  alt="Membership Certificate Template" 
+                  className="w-full h-full object-cover" 
+                />
+                
+                {/* Overlays */}
+                {/* Name Overlay */}
+                <div className="absolute top-[48%] left-0 right-0 text-center px-8">
+                  <span className="font-serif text-[15px] sm:text-[20px] text-slate-800 font-bold tracking-wide italic inline-block">
+                    {member.user?.name}
+                  </span>
+                </div>
+
+                {/* Description Overlay */}
+                <div className="absolute top-[61%] left-[10%] right-[10%] text-center text-slate-600 text-[8px] sm:text-[11px] leading-relaxed">
+                  {membershipCert.description || `This certificate is officially presented to acknowledge their dedication and valuable service as a registered member of the Valmiki Samaj Charitable Trust.`}
+                </div>
+
+                {/* Issue Date Overlay */}
+                <div className="absolute bottom-[13%] left-[17%] text-[7px] sm:text-[9.5px] text-slate-600 font-medium font-mono">
+                  {membershipCert.issueDate ? format(new Date(membershipCert.issueDate), "dd/MM/yyyy") : ""}
+                </div>
+
+                {/* Certificate Number Overlay */}
+                <div className="absolute bottom-[13%] right-[17%] text-[7px] sm:text-[9.5px] text-slate-600 font-medium font-mono">
+                  {membershipCert.certificateNumber}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button className="w-full bg-teal-700 hover:bg-teal-800 text-white" onClick={() => setIsCertificateModalOpen(false)}>
+              Close Preview
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 3. ID Card Preview Modal */}
+      <Dialog open={isIDCardModalOpen} onOpenChange={setIsIDCardModalOpen}>
+        <DialogContent className="max-w-md bg-white p-6">
+          <DialogHeader>
+            <DialogTitle className="text-teal-800 flex items-center gap-2">
+              <CreditCard className="w-5 h-5" /> Digital ID Card Preview
+            </DialogTitle>
+          </DialogHeader>
+
+          {latestIDCard && (
+            <div className="py-4 flex justify-center">
+              <div className="relative w-[280px] h-[420px] rounded-2xl overflow-hidden border border-gray-200 shadow-md bg-teal-50 flex flex-col items-center">
+                <img 
+                  src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611667/ngo-management/templates/generate_id_template.jpg" 
+                  alt="ID Card Template" 
+                  className="w-full h-full object-cover" 
+                />
+                
+                {/* Profile Photo Overlay */}
+                <div className="absolute top-[110px] left-1/2 -translate-x-1/2 w-[90px] h-[90px] rounded-full overflow-hidden border-2 border-white shadow bg-white">
+                  {member.user?.profileImage ? (
+                    <img src={member.user.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-teal-800 text-2xl font-bold bg-teal-100">
+                      {member.user?.name?.slice(0, 2).toUpperCase() || 'MB'}
+                    </div>
+                  )}
+                </div>
+
+                {/* Name & Designation */}
+                <div className="absolute top-[220px] left-0 right-0 text-center px-4">
+                  <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wide line-clamp-1">{member.user?.name}</h4>
+                  <p className="text-[10px] font-bold text-teal-700 uppercase tracking-wider mt-0.5 line-clamp-1">{member.user?.designation || 'Trust Member'}</p>
+                </div>
+
+                {/* Details list */}
+                <div className="absolute top-[275px] left-4 right-4 text-[8px] text-slate-700 font-semibold space-y-1 bg-white/85 p-2.5 rounded-lg border border-teal-100">
+                  <div className="flex justify-between border-b border-slate-100/50 pb-0.5"><span className="text-slate-400">Card No:</span><span className="font-mono text-slate-900">{latestIDCard.cardNumber}</span></div>
+                  <div className="flex justify-between border-b border-slate-100/50 pb-0.5"><span className="text-slate-400">Reg No:</span><span className="font-mono text-slate-900">{member.membershipNumber}</span></div>
+                  <div className="flex justify-between border-b border-slate-100/50 pb-0.5"><span className="text-slate-400">Issue Date:</span><span>{latestIDCard.issueDate ? format(new Date(latestIDCard.issueDate), "dd/MM/yyyy") : ""}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-400">Valid Till:</span><span>{latestIDCard.expiryDate ? format(new Date(latestIDCard.expiryDate), "dd/MM/yyyy") : "Lifetime"}</span></div>
+                </div>
+
+                {/* QR Indicator */}
+                <div className="absolute bottom-[18px] left-1/2 -translate-x-1/2 flex flex-col items-center">
+                  <div className="w-10 h-10 bg-white p-0.5 border border-teal-200 rounded flex items-center justify-center">
+                    <QrCode className="w-8 h-8 text-teal-800 opacity-60" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button className="w-full bg-teal-700 hover:bg-teal-800 text-white" onClick={() => setIsIDCardModalOpen(false)}>
+              Close Preview
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+    </div>
+  );
+}
