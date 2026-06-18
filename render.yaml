@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: ngo-management-api
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: "corepack enable && pnpm install && pnpm build"
+    startCommand: "node dist/index.js"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "5000"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: CORS_ORIGINS
+        value: "https://valmikisamajcharitabletrust.org,https://www.valmikisamajcharitabletrust.org,http://localhost:5173,http://127.0.0.1:5173"
+      - key: FRONTEND_URL
+        value: "https://valmikisamajcharitabletrust.org"

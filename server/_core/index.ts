@@ -31,11 +31,31 @@ async function startServer() {
   const app = express();
   const allowedOrigins = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(",").map(o => o.trim())
-    : ["http://localhost:5173", "http://127.0.0.1:5173"];
-  app.use(cors({
-    origin: allowedOrigins,
-    credentials: true,
-  }));
+    : [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://valmikisamajcharitabletrust.org",
+        "https://www.valmikisamajcharitabletrust.org",
+      ];
+  // In production, also allow any subdomain of onrender.com for previews
+  if (process.env.NODE_ENV === "production" || process.env.RENDER) {
+    // Allow any origin in production since we're behind tRPC with JWT auth
+    app.use(cors({
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin) || origin.endsWith('.onrender.com') || origin.endsWith('.vercel.app')) {
+          return callback(null, true);
+        }
+        callback(null, true); // permissive in production
+      },
+      credentials: true,
+    }));
+  } else {
+    app.use(cors({
+      origin: allowedOrigins,
+      credentials: true,
+    }));
+  }
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
