@@ -18,6 +18,7 @@ import { galleryRouter } from "./routers/gallery";
 import { homepageRouter } from "./routers/homepage";
 import { expenseRouter } from "./routers/expense";
 import { newsRouter } from "./routers/news";
+import { paymentRouter } from "./routers/payment";
 import { stubRouters } from "./routers/stubs";
 
 export const appRouter = router({
@@ -40,6 +41,7 @@ export const appRouter = router({
   homepage: homepageRouter,
   expense: expenseRouter,
   news: newsRouter,
+  payment: paymentRouter,
   ...stubRouters,
 });
 

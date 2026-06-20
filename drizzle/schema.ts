@@ -533,7 +533,8 @@ export type SocialMediaLink = typeof socialMediaLinks.$inferSelect;
 export type InsertSocialMediaLink = typeof socialMediaLinks.$inferInsert;
 
 /**
- * Payment Transactions (PhonePe Integration)
+ * Payment Transactions (Razorpay / PhonePe Integration)
+ * Tracks the lifecycle of a payment from initiation through callback verification.
  */
 export const paymentTransactions = mysqlTable("paymentTransactions", {
   id: int("id").autoincrement().primaryKey(),
@@ -542,8 +543,19 @@ export const paymentTransactions = mysqlTable("paymentTransactions", {
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
   status: mysqlEnum("status", ["initiated", "pending", "completed", "failed", "cancelled"]).default("initiated").notNull(),
   paymentMethod: varchar("paymentMethod", { length: 50 }),
+  // PhonePe-specific
   phonepeOrderId: varchar("phonepeOrderId", { length: 100 }),
   phonepeTransactionId: varchar("phonepeTransactionId", { length: 100 }),
+  // Razorpay-specific
+  razorpayOrderId: varchar("razorpayOrderId", { length: 100 }),
+  razorpayPaymentId: varchar("razorpayPaymentId", { length: 100 }),
+  razorpaySignature: varchar("razorpaySignature", { length: 255 }),
+  // Donor info captured at order creation (used after successful payment)
+  donorName: varchar("donorName", { length: 255 }),
+  donorEmail: varchar("donorEmail", { length: 320 }),
+  donorPhone: varchar("donorPhone", { length: 20 }),
+  purpose: varchar("purpose", { length: 255 }),
+  campaignId: int("campaignId"),
   responseData: json("responseData"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -551,6 +563,7 @@ export const paymentTransactions = mysqlTable("paymentTransactions", {
   transactionIdIdx: uniqueIndex("transactionId_idx").on(table.transactionId),
   donationIdIdx: index("paymentTransactions_donationId_idx").on(table.donationId),
   statusIdx: index("paymentTransactions_status_idx").on(table.status),
+  razorpayOrderIdIdx: index("razorpayOrderId_idx").on(table.razorpayOrderId),
 }));
 
 export type PaymentTransaction = typeof paymentTransactions.$inferSelect;

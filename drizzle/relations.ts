@@ -11,7 +11,8 @@ import {
   internships,
   internshipApplications,
   messages,
-  bulkMessageRecipients
+  bulkMessageRecipients,
+  paymentTransactions
 } from "./schema";
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -150,5 +151,16 @@ export const appointmentLettersRelations = relations(appointmentLetters, ({ one 
     fields: [appointmentLetters.issuedBy],
     references: [users.id],
     relationName: "issuer"
+  }),
+}));
+
+export const paymentTransactionsRelations = relations(paymentTransactions, ({ one }) => ({
+  donation: one(donations, {
+    fields: [paymentTransactions.donationId],
+    references: [donations.id],
+  }),
+  campaign: one(campaigns, {
+    fields: [paymentTransactions.campaignId],
+    references: [campaigns.id],
   }),
 }));

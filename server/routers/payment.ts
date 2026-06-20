@@ -1,0 +1,273 @@
+import { z } from "zod";
+import { createHmac } from "crypto";
+import { router, publicProcedure, adminProcedure } from "../_core/trpc";
+import { getDb } from "../db";
+import { paymentTransactions, donations, campaigns } from "../../drizzle/schema";
+import { eq, desc, sql, and } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
+import { nanoid } from "nanoid";
+import { paginationInput } from "../_core/shared";
+
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "";
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
+
+// Lazily import razorpay (avoids crash when env vars aren't set)
+let razorpayClient: any = null;
+function getRazorpay() {
+  if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Razorpay is not configured. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.",
+    });
+  }
+  if (!razorpayClient) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Razorpay = require("razorpay");
+    razorpayClient = new Razorpay({
+      key_id: RAZORPAY_KEY_ID,
+      key_secret: RAZORPAY_KEY_SECRET,
+    });
+  }
+  return razorpayClient;
+}
+
+function verifyRazorpaySignature(
+  orderId: string,
+  paymentId: string,
+  signature: string
+): boolean {
+  const expected = createHmac("sha256", RAZORPAY_KEY_SECRET)
+    .update(`${orderId}|${paymentId}`)
+    .digest("hex");
+  return expected === signature;
+}
+
+export const paymentRouter = router({
+  /**
+   * Create a Razorpay order and store a pending payment transaction.
+   * Public — no auth required so anonymous users can donate.
+   */
+  createOrder: publicProcedure
+    .input(
+      z.object({
+        amount: z.number().positive(),
+        currency: z.string().default("INR"),
+        donorName: z.string().min(1, "Name is required"),
+        donorEmail: z.string().email("Valid email is required"),
+        donorPhone: z.string().optional(),
+        purpose: z.string().optional(),
+        campaignId: z.number().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const razorpay = getRazorpay();
+
+      // Create order with Razorpay (amount in paise)
+      const razorpayOrder = await razorpay.orders.create({
+        amount: Math.round(input.amount * 100), // INR → paise
+        currency: input.currency,
+        receipt: `RCPT-${nanoid(10).toUpperCase()}`,
+        notes: {
+          purpose: input.purpose || "general",
+          donorName: input.donorName,
+          donorEmail: input.donorEmail,
+        },
+      });
+
+      // Persist the payment transaction record
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      await db.insert(paymentTransactions).values({
+        transactionId: razorpayOrder.id,
+        amount: input.amount.toString(),
+        status: "initiated",
+        paymentMethod: "razorpay",
+        razorpayOrderId: razorpayOrder.id,
+        donorName: input.donorName,
+        donorEmail: input.donorEmail,
+        donorPhone: input.donorPhone,
+        purpose: input.purpose || null,
+        campaignId: input.campaignId || null,
+      });
+
+      return {
+        orderId: razorpayOrder.id,
+        amount: razorpayOrder.amount, // in paise
+        currency: razorpayOrder.currency,
+        keyId: RAZORPAY_KEY_ID,
+      };
+    }),
+
+  /**
+   * Verify a successful Razorpay payment, create the donation, and
+   * mark the transaction as completed.
+   * Public — called from the frontend after Razorpay checkout success.
+   */
+  verifyPayment: publicProcedure
+    .input(
+      z.object({
+        razorpayOrderId: z.string(),
+        razorpayPaymentId: z.string(),
+        razorpaySignature: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      // Verify signature
+      const isValid = verifyRazorpaySignature(
+        input.razorpayOrderId,
+        input.razorpayPaymentId,
+        input.razorpaySignature
+      );
+
+      if (!isValid) {
+        // Mark transaction as failed
+        await db
+          .update(paymentTransactions)
+          .set({
+            status: "failed",
+            razorpayPaymentId: input.razorpayPaymentId,
+            razorpaySignature: input.razorpaySignature,
+            updatedAt: new Date(),
+          })
+          .where(eq(paymentTransactions.razorpayOrderId, input.razorpayOrderId));
+
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Payment verification failed. Invalid signature.",
+        });
+      }
+
+      // Find the transaction record
+      const [txn] = await db
+        .select()
+        .from(paymentTransactions)
+        .where(eq(paymentTransactions.razorpayOrderId, input.razorpayOrderId))
+        .limit(1);
+
+      if (!txn) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Payment transaction not found.",
+        });
+      }
+
+      if (txn.status === "completed") {
+        return {
+          success: true,
+          message: "Payment already verified.",
+          receiptNumber: txn.transactionId,
+        };
+      }
+
+      // Create donation record
+      const receiptNumber = `RCP-${nanoid(10).toUpperCase()}`;
+      const donationAmount = parseFloat(txn.amount.toString());
+
+      const [donation] = await db
+        .insert(donations)
+        .values({
+          donorName: txn.donorName,
+          donorEmail: txn.donorEmail,
+          donorPhone: txn.donorPhone,
+          amount: donationAmount.toString(),
+          donationType: "online",
+          paymentMethod: "razorpay",
+          transactionId: input.razorpayPaymentId,
+          paymentStatus: "completed",
+          purpose: txn.purpose,
+          campaignId: txn.campaignId || undefined,
+          receiptNumber,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .$returningId();
+
+      // Update payment transaction to link the donation
+      await db
+        .update(paymentTransactions)
+        .set({
+          status: "completed",
+          donationId: donation[0].id,
+          razorpayPaymentId: input.razorpayPaymentId,
+          razorpaySignature: input.razorpaySignature,
+          responseData: {
+            razorpayPaymentId: input.razorpayPaymentId,
+          },
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentTransactions.razorpayOrderId, input.razorpayOrderId));
+
+      // Auto-update campaign raised amount
+      if (txn.campaignId) {
+        const [sumResult] = await db
+          .select({ total: sql<string>`sum(cast(amount as decimal(10,2)))` })
+          .from(donations)
+          .where(
+            and(
+              eq(donations.campaignId, txn.campaignId),
+              eq(donations.paymentStatus, "completed")
+            )
+          );
+
+        const totalRaised = parseFloat(sumResult?.total || "0");
+        await db
+          .update(campaigns)
+          .set({ raisedAmount: totalRaised.toString(), updatedAt: new Date() })
+          .where(eq(campaigns.id, txn.campaignId));
+
+        // Auto-complete campaign if goal reached
+        const [campaign] = await db
+          .select()
+          .from(campaigns)
+          .where(eq(campaigns.id, txn.campaignId))
+          .limit(1);
+
+        if (
+          campaign &&
+          campaign.status === "active" &&
+          totalRaised >= parseFloat(campaign.goalAmount as unknown as string)
+        ) {
+          await db
+            .update(campaigns)
+            .set({ status: "completed", updatedAt: new Date() })
+            .where(eq(campaigns.id, txn.campaignId));
+        }
+      }
+
+      return {
+        success: true,
+        donationId: donation[0].id,
+        receiptNumber,
+        message: "Payment verified and donation recorded successfully.",
+      };
+    }),
+
+  /**
+   * Get all payment transactions (admin only).
+   */
+  getAll: adminProcedure
+    .input(paginationInput)
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const offset = (input.page - 1) * input.pageSize;
+      const items = await db
+        .select()
+        .from(paymentTransactions)
+        .orderBy(desc(paymentTransactions.createdAt))
+        .limit(input.pageSize)
+        .offset(offset);
+
+      const [countResult] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(paymentTransactions);
+      const total = countResult?.count ?? 0;
+
+      return { items, total, page: input.page, pageSize: input.pageSize };
+    }),
+});
