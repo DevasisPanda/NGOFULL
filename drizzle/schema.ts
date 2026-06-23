@@ -760,5 +760,64 @@ export const tickerNews = mysqlTable("ticker_news", {
 export type TickerNews = typeof tickerNews.$inferSelect;
 export type InsertTickerNews = typeof tickerNews.$inferInsert;
 
+/**
+ * About Us Page Dynamic Configurations
+ */
+export const aboutUsSettings = mysqlTable("about_us_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  quote: text("quote"), // About Header Quote
+  motto: varchar("motto", { length: 255 }), // Our Motto
+  trustName: varchar("trustName", { length: 255 }), // Trust Identity Header
+  regNo: varchar("regNo", { length: 100 }), // Registration No.
+  established: varchar("established", { length: 100 }), // Established Date
+  founder: varchar("founder", { length: 255 }), // Founder name & titles
+  logoUrl: text("logoUrl"), // Right side image URL, defaults to "/logo.jpg"
+  introParagraphs: json("introParagraphs"), // JSON array of paragraphs: { text: string, boldPrefix?: string, isBoldSecondary?: boolean }
+  commitments: json("commitments"), // JSON array of focus cards: { icon: string, title: string, description: string }
+  visionTitle: varchar("visionTitle", { length: 255 }), // Vision Section Title
+  visionDescription: text("visionDescription"), // Vision Section Subtitle
+  visionPoints: json("visionPoints"), // JSON array of strings (bullet points)
+  coreValues: json("coreValues"), // JSON array of badges: { icon: string, title: string }
+  promiseTitle: varchar("promiseTitle", { length: 255 }), // Promise Title
+  promiseText: text("promiseText"), // Promise Quote/Text
+  joinTitle: varchar("joinTitle", { length: 255 }), // Join Us Title
+  joinDescription: text("joinDescription"), // Join Us Description
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AboutUsSettings = typeof aboutUsSettings.$inferSelect;
+export type InsertAboutUsSettings = typeof aboutUsSettings.$inferInsert;
+
+/**
+ * Audit Reports
+ */
+export const auditReports = mysqlTable("audit_reports", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(), // Year/Title of audit
+  imageUrl: text("imageUrl"), // Report image
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AuditReport = typeof auditReports.$inferSelect;
+export type InsertAuditReport = typeof auditReports.$inferInsert;
+
+/**
+ * Achievements
+ */
+export const achievements = mysqlTable("achievements", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  imageUrl: text("imageUrl"), // Photo
+  description: text("description"), // 1-2 line description
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Achievement = typeof achievements.$inferSelect;
+export type InsertAchievement = typeof achievements.$inferInsert;
+
+
 
 

@@ -302,23 +302,6 @@ export const membershipRouter = router({
     return { success: true, renewalDate: newRenewalDate };
   }),
 
-  // Get referrals
-  getReferrals: protectedProcedure.query(async ({ ctx }) => {
-    const db = await getDb();
-    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-
-    const user = await db.select().from(users).where(eq(users.id, ctx.user.id)).limit(1);
-
-    if (user.length === 0) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
-    }
-
-    return db
-      .select()
-      .from(members)
-      .where(eq(members.referredBy, user[0].id));
-  }),
-
   // Get all memberships (admin only, paginated)
   adminGetAll: adminProcedure
     .input(paginationInput)

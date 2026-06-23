@@ -42,7 +42,6 @@ const menuItems = [
   { icon: LayoutDashboard, label: "Overview", path: "/admin" },
   { icon: Users, label: "User Management", path: "/admin/users" },
   { icon: UserPlus, label: "Membership Requests", path: "/admin/requests" },
-  { icon: Network, label: "Referral Network", path: "/admin/referrals" },
   { icon: FileText, label: "Documents", path: "/admin/documents" },
   { icon: Target, label: "Campaigns", path: "/admin/campaigns" },
   { icon: HeartHandshake, label: "Donations", path: "/admin/donations" },

@@ -7,6 +7,7 @@ import { eq, desc, like, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { excludePassword } from "../utils/auth";
 import { generateMembershipNumber, paginationInput } from "../_core/shared";
+import { logAuditEvent } from "../utils/audit";
 
 export const adminRouter = router({
   // Create user with membership (uses transaction to fix race condition)
@@ -21,7 +22,7 @@ export const adminRouter = router({
         profileImage: z.string().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
 
@@ -69,6 +70,8 @@ export const adminRouter = router({
         return { userId: newUserId, membershipNumber };
       });
 
+      await logAuditEvent(db, ctx.user.id, "CREATE_USER", "users", result.userId, { email: input.email, name: input.name }, ctx.req.ip);
+
       return { success: true, ...result };
     }),
 
@@ -90,11 +93,12 @@ export const adminRouter = router({
   // Approve user
   approveUser: adminProcedure
     .input(z.object({ userId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
 
       await db.update(users).set({ status: "active" }).where(eq(users.id, input.userId));
+      await logAuditEvent(db, ctx.user.id, "APPROVE_USER", "users", input.userId, null, ctx.req.ip);
 
       return { success: true };
     }),
@@ -114,6 +118,7 @@ export const adminRouter = router({
       }
 
       await db.update(users).set({ status: "blocked" }).where(eq(users.id, input.userId));
+      await logAuditEvent(db, ctx.user.id, "BLOCK_USER", "users", input.userId, null, ctx.req.ip);
 
       return { success: true };
     }),
@@ -121,11 +126,12 @@ export const adminRouter = router({
   // Unblock user
   unblockUser: adminProcedure
     .input(z.object({ userId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
 
       await db.update(users).set({ status: "active" }).where(eq(users.id, input.userId));
+      await logAuditEvent(db, ctx.user.id, "UNBLOCK_USER", "users", input.userId, null, ctx.req.ip);
 
       return { success: true };
     }),
@@ -145,6 +151,7 @@ export const adminRouter = router({
       }
 
       await db.delete(users).where(eq(users.id, input.userId));
+      await logAuditEvent(db, ctx.user.id, "DELETE_USER", "users", input.userId, null, ctx.req.ip);
 
       return { success: true };
     }),
@@ -152,11 +159,12 @@ export const adminRouter = router({
   // Promote to admin
   promoteToAdmin: adminProcedure
     .input(z.object({ userId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
 
       await db.update(users).set({ role: "admin" }).where(eq(users.id, input.userId));
+      await logAuditEvent(db, ctx.user.id, "PROMOTE_ADMIN", "users", input.userId, null, ctx.req.ip);
 
       return { success: true };
     }),
@@ -187,7 +195,7 @@ export const adminRouter = router({
         profileImage: z.string().optional().nullable(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
 
@@ -227,6 +235,41 @@ export const adminRouter = router({
         })
         .where(eq(users.id, input.userId));
 
+      await logAuditEvent(db, ctx.user.id, "UPDATE_USER", "users", input.userId, { name: input.name, email: input.email, role: input.role, status: input.status }, ctx.req.ip);
+
       return { success: true };
+    }),
+
+  resetUserPassword: adminProcedure
+    .input(
+      z.object({
+        userId: z.number(),
+        newPassword: z.string().min(6, "Password must be at least 6 characters"),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const targetUser = await db.select().from(users).where(eq(users.id, input.userId)).limit(1);
+      if (targetUser.length === 0) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+
+      // Enforce authority check
+      if (targetUser[0].role === "admin" && targetUser[0].id <= ctx.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Cannot reset password for an admin of equal or higher authority." });
+      }
+
+      const passwordHash = await hashPassword(input.newPassword);
+      await db
+        .update(users)
+        .set({
+          passwordHash,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, input.userId));
+
+      await logAuditEvent(db, ctx.user.id, "RESET_PASSWORD", "users", input.userId, null, ctx.req.ip);
+
+      return { success: true, message: "User password reset successfully" };
     }),
 });

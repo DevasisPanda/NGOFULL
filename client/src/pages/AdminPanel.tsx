@@ -26,6 +26,7 @@ import ActiveMembershipsPage from "./admin/ActiveMembershipsPage";
 import ExpiringMembershipsPage from "./admin/ExpiringMembershipsPage";
 
 // Import Certificate module pages
+import CertificateBuilder from "./admin/CertificateBuilder";
 import IssueCertificatePage from "./admin/certificates/IssueCertificatePage";
 import ActiveCertificatesPage from "./admin/certificates/ActiveCertificatesPage";
 import OrganizationCertificatesPage from "./admin/certificates/OrganizationCertificatesPage";
@@ -35,6 +36,9 @@ import WebsiteManagement from "./admin/WebsiteManagement";
 import AddExpensePage from "./admin/expenses/AddExpensePage";
 import ExpensesDataPage from "./admin/expenses/ExpensesDataPage";
 import HomepageManagementPage from "./admin/website/HomepageManagementPage";
+import AboutUsManagementPage from "./admin/website/AboutUsManagementPage";
+import AuditManagementPage from "./admin/website/AuditManagementPage";
+import AchievementsManagementPage from "./admin/website/AchievementsManagementPage";
 
 // Import News module pages
 import CreateNewsPage from "./admin/news/CreateNewsPage";
@@ -121,6 +125,7 @@ export default function AdminPanel() {
             <Route path="/admin/membership/expiring" component={ExpiringMembershipsPage} />
 
             {/* Certificate Management Module */}
+            <Route path="/admin/certificates/builder" component={CertificateBuilder} />
             <Route path="/admin/certificates/issue" component={IssueCertificatePage} />
             <Route path="/admin/certificates/active" component={ActiveCertificatesPage} />
             <Route path="/admin/certificates/org" component={OrganizationCertificatesPage} />
@@ -136,6 +141,9 @@ export default function AdminPanel() {
             {/* Website Settings Module */}
             <Route path="/admin/website/gallery" component={WebsiteManagement} />
             <Route path="/admin/website/homepage" component={HomepageManagementPage} />
+            <Route path="/admin/website/about" component={AboutUsManagementPage} />
+            <Route path="/admin/website/audits" component={AuditManagementPage} />
+            <Route path="/admin/website/achievements" component={AchievementsManagementPage} />
 
             {/* News Management Module */}
             <Route path="/admin/news/create" component={CreateNewsPage} />

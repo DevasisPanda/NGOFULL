@@ -16,6 +16,8 @@ import { uploadRouter } from "./routers/upload";
 import { beneficiaryRouter } from "./routers/beneficiary";
 import { galleryRouter } from "./routers/gallery";
 import { homepageRouter } from "./routers/homepage";
+import { aboutUsRouter } from "./routers/aboutUs";
+import { websiteRouter } from "./routers/website";
 import { expenseRouter } from "./routers/expense";
 import { newsRouter } from "./routers/news";
 import { paymentRouter } from "./routers/payment";
@@ -39,6 +41,8 @@ export const appRouter = router({
   beneficiary: beneficiaryRouter,
   gallery: galleryRouter,
   homepage: homepageRouter,
+  aboutUs: aboutUsRouter,
+  website: websiteRouter,
   expense: expenseRouter,
   news: newsRouter,
   payment: paymentRouter,

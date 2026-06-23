@@ -47,11 +47,8 @@ const menuItems: MenuItem[] = [
       { id: "mem-active", label: "Active Memberships", path: "/admin/membership/active" },
       { id: "mem-expiring", label: "Upcoming Expiries", path: "/admin/membership/expiring" },
   ]},
-  { id: "referrals", label: "Referral Network", icon: <Network className="w-5 h-5" />, submenu: [
-      { id: "ref-active", label: "Active Referrals", path: "/admin/referrals/active" },
-      { id: "ref-inactive", label: "Inactive Referrals", path: "/admin/referrals/inactive" },
-  ]},
   { id: "certificates", label: "Certificate Management", icon: <FileText className="w-5 h-5" />, submenu: [
+      { id: "cert-builder", label: "Layout Builder", path: "/admin/certificates/builder" },
       { id: "cert-org", label: "Organization Certificates", path: "/admin/certificates/org" },
       { id: "cert-issue", label: "Issue Activity Certificate", path: "/admin/certificates/issue" },
       { id: "cert-active", label: "Active Certificate", path: "/admin/certificates/active" },
@@ -85,11 +82,6 @@ const menuItems: MenuItem[] = [
   { id: "projects", label: "Project Management", icon: <Briefcase className="w-5 h-5" />, path: "/admin/projects" },
   { id: "internship", label: "Internship Management", icon: <GraduationCap className="w-5 h-5" />, path: "/admin/internships" },
   { id: "events", label: "Event Management", icon: <Calendar className="w-5 h-5" />, path: "/admin/events" },
-  { id: "activity", label: "Activity Management", icon: <Activity className="w-5 h-5" />, submenu: [
-      { id: "act-create", label: "Create Post", path: "/admin/activities/create" },
-      { id: "act-active", label: "Active Post", path: "/admin/activities/active" },
-      { id: "act-landing", label: "Landing Page", path: "/admin/activities/landing" },
-  ]},
   { id: "expense", label: "Expense Management", icon: <Receipt className="w-5 h-5" />, submenu: [
       { id: "exp-add", label: "Add Expense", path: "/admin/expenses/add" },
       { id: "exp-data", label: "Expense Data", path: "/admin/expenses/data" },
@@ -100,6 +92,9 @@ const menuItems: MenuItem[] = [
   { id: "website-settings", label: "Website Settings", icon: <Globe className="w-5 h-5" />, submenu: [
       { id: "web-gallery", label: "Gallery Management", path: "/admin/website/gallery" },
       { id: "web-homepage", label: "Homepage Management", path: "/admin/website/homepage" },
+      { id: "web-aboutus", label: "About Us Management", path: "/admin/website/about" },
+      { id: "web-audits", label: "Audit Reports", path: "/admin/website/audits" },
+      { id: "web-achievements", label: "Achievements", path: "/admin/website/achievements" },
   ]},
 ];
 

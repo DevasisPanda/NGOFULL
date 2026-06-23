@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -110,11 +111,19 @@ export default function ActiveUsersPage() {
   };
 
   // Fetch all users
-  const { data, isLoading } = trpc.admin.getAllUsers.useQuery({ page: 1, pageSize: 1000 });
+  const { data, isLoading, isError } = trpc.admin.getAllUsers.useQuery({ page: 1, pageSize: 1000 });
 
   const blockMutation = trpc.admin.blockUser.useMutation({
     onSuccess: () => {
       toast.success("User has been blocked.");
+      utils.admin.getAllUsers.invalidate();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const unblockMutation = trpc.admin.unblockUser.useMutation({
+    onSuccess: () => {
+      toast.success("User has been unblocked.");
       utils.admin.getAllUsers.invalidate();
     },
     onError: (error) => toast.error(error.message),
@@ -144,8 +153,11 @@ export default function ActiveUsersPage() {
     onError: (error) => toast.error(error.message),
   });
 
+  if (isError) {
+    return <div className="p-8 text-center text-red-500">Failed to load users. <button className="underline ml-1" onClick={() => window.location.reload()}>Retry</button></div>;
+  }
   if (isLoading) {
-    return <div className="p-8">Loading users...</div>;
+    return <div className="flex items-center justify-center p-12"><Spinner className="size-6 text-gray-400" /></div>;
   }
 
   const allUsers = data?.items || [];
@@ -293,11 +305,30 @@ export default function ActiveUsersPage() {
                       <td className="px-2 py-2 border-r border-gray-200 text-center">
                         <div className="flex justify-center gap-1">
                           {user.status === "pending" ? (
-                            <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100" onClick={() => approveMutation.mutate({ userId: user.id })}>
+                            <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100" onClick={() => {
+                              const name = user.name || user.email || "this user";
+                              if (window.confirm(`Approve ${name}?`)) {
+                                approveMutation.mutate({ userId: user.id });
+                              }
+                            }}>
                               Approve
                             </Button>
+                          ) : user.status === "blocked" ? (
+                            <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-blue-600 bg-blue-50 border-blue-200 hover:bg-blue-100" onClick={() => {
+                              const name = user.name || user.email || "this user";
+                              if (window.confirm(`Unblock ${name}? They will regain access.`)) {
+                                unblockMutation.mutate({ userId: user.id });
+                              }
+                            }}>
+                              Unblock
+                            </Button>
                           ) : (
-                            <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100" onClick={() => blockMutation.mutate({ userId: user.id })} disabled={user.role === "admin"}>
+                            <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100" onClick={() => {
+                              const name = user.name || user.email || "this user";
+                              if (window.confirm(`Block ${name}? They will lose access until an admin unblocks them.`)) {
+                                blockMutation.mutate({ userId: user.id });
+                              }
+                            }} disabled={user.role === "admin"}>
                               Block
                             </Button>
                           )}
@@ -319,7 +350,12 @@ export default function ActiveUsersPage() {
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </Button>
-                          <Button size="icon" variant="outline" className="h-7 w-7 text-red-600 bg-red-50 border-red-200 hover:bg-red-100" onClick={() => deleteMutation.mutate({ userId: user.id })} disabled={user.role === "admin"}>
+                          <Button size="icon" variant="outline" className="h-7 w-7 text-red-600 bg-red-50 border-red-200 hover:bg-red-100" onClick={() => {
+                            const name = user.name || user.email || "this user";
+                            if (window.confirm(`Permanently delete ${name}? This removes the user and all associated data. Cannot be undone.`)) {
+                              deleteMutation.mutate({ userId: user.id });
+                            }
+                          }} disabled={user.role === "admin"}>
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </div>

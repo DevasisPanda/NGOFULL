@@ -19,6 +19,17 @@ export const projectRouter = router({
       .orderBy(desc(projects.createdAt));
   }),
 
+  // Get project by ID (public)
+  getById: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const result = await db.select().from(projects).where(eq(projects.id, input.id)).limit(1);
+      return result.length > 0 ? result[0] : null;
+    }),
+
   // Get all projects for admin (paginated)
   adminGetAll: adminProcedure
     .input(paginationInput)

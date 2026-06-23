@@ -5,6 +5,7 @@ import { users } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { excludePassword } from "../utils/auth";
+import { hashPassword, verifyPassword } from "../auth";
 
 export const memberRouter = router({
   getProfile: protectedProcedure.query(async ({ ctx }) => {
@@ -71,5 +72,43 @@ export const memberRouter = router({
         .where(eq(users.id, ctx.user.id));
 
       return { success: true };
+    }),
+
+  changePassword: protectedProcedure
+    .input(
+      z.object({
+        currentPassword: z.string().min(1, "Current password is required"),
+        newPassword: z.string().min(6, "New password must be at least 6 characters"),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      // Fetch user with password
+      const user = await db.select().from(users).where(eq(users.id, ctx.user.id)).limit(1);
+      if (user.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      }
+
+      const userData = user[0];
+      
+      // Verify current password
+      const passwordMatch = await verifyPassword(input.currentPassword, userData.passwordHash || "");
+      if (!passwordMatch) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Incorrect current password" });
+      }
+
+      // Hash and save new password
+      const newHash = await hashPassword(input.newPassword);
+      await db
+        .update(users)
+        .set({
+          passwordHash: newHash,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, ctx.user.id));
+
+      return { success: true, message: "Password updated successfully" };
     }),
 });

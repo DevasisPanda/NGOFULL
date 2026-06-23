@@ -39,6 +39,11 @@ export default function AddMemberPage() {
       toast.error("Please fill in all required fields");
       return;
     }
+    // Basic email format check
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
     createUserMutation.mutate(formData);
   };
 

@@ -15,6 +15,7 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     password: "",
     confirmPassword: "",
   });
@@ -41,6 +42,19 @@ export default function RegisterPage() {
       return;
     }
 
+    // Name must have at least 3 words
+    const nameWords = formData.name.trim().split(/\s+/);
+    if (nameWords.length < 3) {
+      setError("Full name must include at least 3 words (e.g., John David Doe)");
+      return;
+    }
+
+    // Phone must be exactly 10 digits
+    if (!/^\d{10}$/.test(formData.phone)) {
+      setError("Phone number must be exactly 10 digits");
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -58,6 +72,7 @@ export default function RegisterPage() {
         name: formData.name,
         email: formData.email,
         password: formData.password,
+        phone: formData.phone,
       });
 
       setSuccess(true);
@@ -127,13 +142,14 @@ export default function RegisterPage() {
                   id="name"
                   name="name"
                   type="text"
-                  placeholder="John Doe"
+                  placeholder="John David Doe"
                   value={formData.name}
                   onChange={handleChange}
                   required
                   disabled={isLoading}
                   className="h-10"
                 />
+                <p className="text-[11px] text-gray-500">Must include at least 3 words (First Middle Last)</p>
               </div>
 
               {/* Email Field */}
@@ -150,6 +166,24 @@ export default function RegisterPage() {
                   disabled={isLoading}
                   className="h-10"
                 />
+              </div>
+
+              {/* Phone Field */}
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  placeholder="9876543210"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  required
+                  disabled={isLoading}
+                  className="h-10"
+                  maxLength={10}
+                />
+                <p className="text-[11px] text-gray-500">Must be exactly 10 digits</p>
               </div>
 
               {/* Password Field */}
@@ -183,6 +217,8 @@ export default function RegisterPage() {
                   className="h-10"
                 />
               </div>
+
+              <p className="-mt-2 text-[11px] text-gray-500">Password must be at least 6 characters</p>
 
               {/* Register Button */}
               <Button

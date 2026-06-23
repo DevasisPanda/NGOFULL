@@ -4,6 +4,7 @@ import { getDb } from "../db";
 import { gallery } from "../../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import { logAuditEvent } from "../utils/audit";
 
 export const galleryRouter = router({
   // Get all active/public gallery items
@@ -38,7 +39,7 @@ export const galleryRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
 
-      await db.insert(gallery).values({
+      const [insertResult] = await db.insert(gallery).values({
         title: input.title,
         description: input.description || null,
         imageUrl: input.imageUrl,
@@ -50,17 +51,38 @@ export const galleryRouter = router({
         updatedAt: new Date(),
       });
 
+      await logAuditEvent(
+        db,
+        ctx.user.id,
+        "CREATE_GALLERY",
+        "gallery",
+        insertResult.insertId,
+        { title: input.title, mediaType: input.mediaType },
+        ctx.req.ip
+      );
+
       return { success: true };
     }),
 
   // Delete a gallery item
   delete: adminProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
 
       await db.delete(gallery).where(eq(gallery.id, input.id));
+      
+      await logAuditEvent(
+        db,
+        ctx.user.id,
+        "DELETE_GALLERY",
+        "gallery",
+        input.id,
+        null,
+        ctx.req.ip
+      );
+
       return { success: true };
     }),
 });

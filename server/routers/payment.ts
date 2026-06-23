@@ -13,7 +13,7 @@ const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
 
 // Lazily import razorpay (avoids crash when env vars aren't set)
 let razorpayClient: any = null;
-function getRazorpay() {
+async function getRazorpay() {
   if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
@@ -21,8 +21,7 @@ function getRazorpay() {
     });
   }
   if (!razorpayClient) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const Razorpay = require("razorpay");
+    const { default: Razorpay } = await import("razorpay");
     razorpayClient = new Razorpay({
       key_id: RAZORPAY_KEY_ID,
       key_secret: RAZORPAY_KEY_SECRET,
@@ -60,7 +59,11 @@ export const paymentRouter = router({
       })
     )
     .mutation(async ({ input }) => {
+<<<<<<< HEAD
       const razorpay = getRazorpay();
+=======
+      const razorpay = await getRazorpay();
+>>>>>>> a3cd76b (Add Razorpay payments, certificate builder, CaptureActions, registration validation, and visitor pass generation)
 
       // Create order with Razorpay (amount in paise)
       const razorpayOrder = await razorpay.orders.create({

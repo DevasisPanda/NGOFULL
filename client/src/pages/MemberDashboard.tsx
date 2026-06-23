@@ -740,37 +740,75 @@ export default function MemberDashboard() {
                   </div>
                 </div>
               ) : (
-                <div className="relative w-full aspect-[1.414/1] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50">
-                  <img 
-                    src={selectedPreviewCert.certificateType === 'achievement' 
-                      ? "https://res.cloudinary.com/dxmovdiru/image/upload/v1781611663/ngo-management/templates/achievement_certificate_template.jpg" 
-                      : "https://res.cloudinary.com/dxmovdiru/image/upload/v1781611666/ngo-management/templates/membership_certificate_template.jpg"} 
-                    alt="Certificate Template" 
-                    className="w-full h-full object-cover" 
-                  />
-                  
-                  {/* Name Overlay */}
-                  <div className="absolute top-[48%] left-0 right-0 text-center px-8">
-                    <span className="font-serif text-[18px] sm:text-[24px] md:text-[28px] text-slate-800 font-bold tracking-wide italic inline-block">
-                      {profile?.name}
-                    </span>
-                  </div>
+                selectedPreviewCert.certificateType === 'achievement' ? (
+                  /* Achievement Template (Landscape) */
+                  <div className="relative w-full aspect-[1.414/1] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50">
+                    <img 
+                      src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611663/ngo-management/templates/achievement_certificate_template.jpg" 
+                      alt="Achievement Certificate" 
+                      className="w-full h-full object-cover" 
+                    />
+                    
+                    {/* Name Overlay */}
+                    <div className="absolute top-[48%] left-0 right-0 text-center px-8">
+                      <span className="font-serif text-[18px] sm:text-[24px] md:text-[28px] text-slate-800 font-bold tracking-wide italic inline-block">
+                        {profile?.name}
+                      </span>
+                    </div>
 
-                  {/* Description Overlay */}
-                  <div className="absolute top-[61%] left-1/2 -translate-x-1/2 w-[80%] text-center text-slate-600 text-[8px] sm:text-[11px] md:text-[13px] leading-relaxed max-w-lg">
-                    {selectedPreviewCert.description || `This certificate is officially presented to acknowledge their dedication and valuable service as a registered ${selectedPreviewCert.certificateType} of the Valmiki Samaj Charitable Trust.`}
-                  </div>
+                    {/* Description Overlay */}
+                    <div className="absolute top-[61%] left-1/2 -translate-x-1/2 w-[80%] text-center text-slate-600 text-[8px] sm:text-[11px] md:text-[13px] leading-relaxed max-w-lg">
+                      {selectedPreviewCert.description || `This certificate is officially presented to acknowledge their dedication and valuable service as a registered ${selectedPreviewCert.certificateType} of the Valmiki Samaj Charitable Trust.`}
+                    </div>
 
-                  {/* Issue Date Overlay */}
-                  <div className="absolute bottom-[13%] left-[17%] text-[7px] sm:text-[9px] md:text-[11px] text-slate-600 font-medium font-mono">
-                    {selectedPreviewCert.issueDate ? new Date(selectedPreviewCert.issueDate).toLocaleDateString() : ""}
-                  </div>
+                    {/* Issue Date Overlay */}
+                    <div className="absolute bottom-[13%] left-[17%] text-[7px] sm:text-[9px] md:text-[11px] text-slate-600 font-medium font-mono">
+                      {selectedPreviewCert.issueDate ? new Date(selectedPreviewCert.issueDate).toLocaleDateString() : ""}
+                    </div>
 
-                  {/* Certificate Number Overlay */}
-                  <div className="absolute bottom-[13%] right-[17%] text-[7px] sm:text-[9px] md:text-[11px] text-slate-600 font-medium font-mono">
-                    {selectedPreviewCert.certificateNumber}
+                    {/* Certificate Number Overlay */}
+                    <div className="absolute bottom-[13%] right-[17%] text-[7px] sm:text-[9px] md:text-[11px] text-slate-600 font-medium font-mono">
+                      {selectedPreviewCert.certificateNumber}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  /* Membership/Volunteer/Other Templates (Portrait) */
+                  <div className="relative w-full max-w-md aspect-[904/1354] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
+                    <img 
+                      src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611666/ngo-management/templates/membership_certificate_template.jpg" 
+                      alt="Membership Certificate Template" 
+                      className="w-full h-full object-cover" 
+                    />
+                    
+                    {/* Name Overlay */}
+                    <div className="absolute left-0 right-0 text-center px-8" style={{ top: '39.14%' }}>
+                      <span className="font-serif text-[15px] sm:text-[20px] text-slate-800 font-bold tracking-wide italic inline-block">
+                        {profile?.name}
+                      </span>
+                    </div>
+
+                    {/* Membership Number */}
+                    <div className="absolute text-center" style={{ top: '54.65%', left: '17.7%', transform: 'translateX(-50%)', width: '30%' }}>
+                      <span className="font-sans text-[9px] sm:text-[12px] text-slate-800 font-bold">
+                        {selectedPreviewCert.certificateNumber}
+                      </span>
+                    </div>
+
+                    {/* Issue Date */}
+                    <div className="absolute text-center" style={{ top: '54.65%', left: '51.44%', transform: 'translateX(-50%)', width: '30%' }}>
+                      <span className="font-sans text-[9px] sm:text-[12px] text-slate-800 font-bold">
+                        {selectedPreviewCert.issueDate ? new Date(selectedPreviewCert.issueDate).toLocaleDateString() : ""}
+                      </span>
+                    </div>
+
+                    {/* Expiry Date */}
+                    <div className="absolute text-center" style={{ top: '54.65%', left: '82.41%', transform: 'translateX(-50%)', width: '30%' }}>
+                      <span className="font-sans text-[9px] sm:text-[12px] text-slate-800 font-bold">
+                        {selectedPreviewCert.expiryDate ? new Date(selectedPreviewCert.expiryDate).toLocaleDateString() : "Lifetime"}
+                      </span>
+                    </div>
+                  </div>
+                )
               )
             )}
           </div>

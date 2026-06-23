@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,7 +21,7 @@ export default function EventManagementPage() {
   });
 
   // Queries
-  const { data: events, refetch: refetchEvents } = trpc.event.adminGetAll.useQuery();
+  const { data: events, isLoading, isError, refetch: refetchEvents } = trpc.event.adminGetAll.useQuery();
 
   // Mutations
   const createEventMutation = trpc.event.create.useMutation({
@@ -54,6 +55,14 @@ export default function EventManagementPage() {
   };
 
   if (user?.role !== "admin") return <div className="p-6">Access Denied</div>;
+
+  if (isError) {
+    return <div className="flex items-center justify-center h-64 text-red-500">Failed to load events. <button className="underline ml-1" onClick={() => window.location.reload()}>Retry</button></div>;
+  }
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64"><Spinner className="size-6 text-gray-400" /></div>;
+  }
 
   return (
     <div className="space-y-6 p-6">

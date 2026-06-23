@@ -4,6 +4,7 @@ import { getDb } from "../db";
 import { homepageSettings } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import { logAuditEvent } from "../utils/audit";
 
 export const homepageRouter = router({
   getSettings: publicProcedure.query(async () => {
@@ -103,7 +104,7 @@ export const homepageRouter = router({
         donateSmileImage5: z.string().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) {
         throw new TRPCError({
@@ -114,7 +115,10 @@ export const homepageRouter = router({
 
       try {
         const existing = await db.select().from(homepageSettings).limit(1);
+        let settingsId = null;
+
         if (existing.length > 0) {
+          settingsId = existing[0].id;
           // Update
           await db
             .update(homepageSettings)
@@ -151,10 +155,10 @@ export const homepageRouter = router({
               donateSmileContent5: input.donateSmileContent5 || null,
               donateSmileImage5: input.donateSmileImage5 || null,
             })
-            .where(eq(homepageSettings.id, existing[0].id));
+            .where(eq(homepageSettings.id, settingsId));
         } else {
           // Insert
-          await db.insert(homepageSettings).values({
+          const [insertResult] = await db.insert(homepageSettings).values({
             heroTitle: input.heroTitle,
             heroDescription: input.heroDescription || "",
             heroImage: input.heroImage || "",
@@ -187,7 +191,18 @@ export const homepageRouter = router({
             donateSmileContent5: input.donateSmileContent5 || "",
             donateSmileImage5: input.donateSmileImage5 || "",
           });
+          settingsId = insertResult.insertId;
         }
+
+        await logAuditEvent(
+          db,
+          ctx.user.id,
+          "UPDATE_HOMEPAGE_SETTINGS",
+          "homepage_settings",
+          settingsId,
+          null,
+          ctx.req.ip
+        );
 
         return { success: true, message: "Homepage settings updated successfully" };
       } catch (error) {

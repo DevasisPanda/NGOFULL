@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format, isBefore } from "date-fns";
 import { Filter, Trash2, Edit, Eye, FileText, ChevronsUpDown, ChevronLeft, ChevronRight, UserCheck, QrCode } from "lucide-react";
+import { CaptureActions } from "@/components/CaptureActions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -18,6 +19,7 @@ export default function ActiveVisitorCertsPage() {
 
   // Modal State
   const [selectedPreviewCert, setSelectedPreviewCert] = useState<any>(null);
+  const visitorRef = useRef<HTMLDivElement>(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
 
   if (isLoading) {
@@ -253,74 +255,64 @@ export default function ActiveVisitorCertsPage() {
 
           <div className="py-4 flex justify-center">
             {selectedPreviewCert && (
-              <div className="relative w-[600px] aspect-[1.5/1] rounded-2xl overflow-hidden border border-gray-200 shadow-md bg-white flex flex-col items-center" style={{ fontFamily: "'Arial', sans-serif" }}>
+              <div ref={visitorRef} className="relative w-full max-w-xl aspect-[1.5/1] rounded-2xl overflow-hidden border border-gray-200 shadow-md bg-teal-50">
                 <img 
                   src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611667/ngo-management/templates/generate_id_template.jpg" 
                   alt="Visitor Pass Template" 
-                  className="w-full h-full object-contain" 
+                  className="w-full h-full object-cover" 
                   crossOrigin="anonymous"
                 />
                 
                 {/* Photo Overlay Placeholder */}
                 <div className="absolute top-[41.5%] left-[23%] -translate-x-1/2 w-[16%] aspect-[1/1] rounded-xl overflow-hidden shadow-sm bg-white border border-gray-100 flex items-center justify-center">
-                  <UserCheck className="w-12 h-12 text-teal-800 opacity-60" />
+                  <UserCheck className="w-8 h-8 text-teal-800 opacity-60" />
                 </div>
 
-                {/* Name Overlay */}
+                {/* Name & Designation Overlay */}
                 <div className="absolute top-[32%] left-[4.5%] w-[40%] text-center">
-                  <h4 className="font-extrabold text-[12px] sm:text-[16px] text-red-600 uppercase tracking-wide line-clamp-1">{selectedPreviewCert.title}</h4>
+                  <h4 className="font-extrabold text-[9px] sm:text-[13px] text-red-600 uppercase tracking-wide line-clamp-1">{selectedPreviewCert.title}</h4>
+                  <p className="text-[7px] sm:text-[9.5px] font-bold text-teal-700 uppercase tracking-wider mt-0.5 line-clamp-1">TEMPORARY VISITOR</p>
                 </div>
 
                 {/* Left Side Details */}
-                {/* ID No (Pass No) */}
-                <div className="absolute top-[62.5%] left-[28%]">
-                  <span className="font-bold text-[10px] sm:text-[14px] text-slate-800">
-                    {selectedPreviewCert.certificateNumber}
-                  </span>
+                {/* Pass No */}
+                <div className="absolute top-[62.5%] left-[28%] text-[8px] sm:text-[12px] font-bold text-slate-800">
+                  {selectedPreviewCert.certificateNumber}
                 </div>
 
-                {/* Mob No */}
-                <div className="absolute top-[67%] left-[17%]">
-                  <span className="font-bold text-[10px] sm:text-[14px] text-slate-800">
-                    N/A
-                  </span>
+                {/* Mobile No */}
+                <div className="absolute top-[67%] left-[17%] text-[8px] sm:text-[12px] font-bold text-slate-800">
+                  N/A
                 </div>
 
-                {/* Email (Purpose) */}
-                <div className="absolute top-[71%] left-[17%]">
-                  <span className="font-bold text-[10px] sm:text-[14px] text-slate-800 line-clamp-1 w-[150px]">
-                    {selectedPreviewCert.description || 'Official Visit'}
-                  </span>
+                {/* Email/Purpose (displaying visitor purpose here) */}
+                <div className="absolute top-[71%] left-[17%] text-[7px] sm:text-[10px] font-bold text-slate-800 line-clamp-1 w-[35%]">
+                  {selectedPreviewCert.description || "Official Visit"}
                 </div>
 
                 {/* City */}
-                <div className="absolute top-[75%] left-[13%]">
-                  <span className="font-bold text-[10px] sm:text-[14px] text-slate-800">
-                    N/A
-                  </span>
+                <div className="absolute top-[75%] left-[13%] text-[8px] sm:text-[12px] font-bold text-slate-800">
+                  N/A
                 </div>
 
                 {/* Right Side Details */}
-                {/* Joining Date (Issue Date) */}
-                <div className="absolute top-[79.5%] left-[78%]">
-                  <span className="font-bold text-[11px] sm:text-[15px] text-[#0f2454]">
-                    {selectedPreviewCert.issueDate ? format(new Date(selectedPreviewCert.issueDate), "dd-MM-yyyy") : ""}
-                  </span>
+                {/* Joining/Issue Date */}
+                <div className="absolute top-[79.5%] left-[78%] text-[8px] sm:text-[12px] font-bold text-[#0f2454]">
+                  {selectedPreviewCert.issueDate ? format(new Date(selectedPreviewCert.issueDate), "dd-MM-yyyy") : ""}
                 </div>
 
-                {/* Validity Date (Valid Till) */}
-                <div className="absolute top-[84%] left-[78%]">
-                  <span className="font-bold text-[11px] sm:text-[15px] text-[#0f2454]">
-                    {selectedPreviewCert.expiryDate ? format(new Date(selectedPreviewCert.expiryDate), "dd-MM-yyyy") : "Same Day"}
-                  </span>
+                {/* Validity/Expiry Date */}
+                <div className="absolute top-[84%] left-[78%] text-[8px] sm:text-[12px] font-bold text-[#0f2454]">
+                  {selectedPreviewCert.expiryDate ? format(new Date(selectedPreviewCert.expiryDate), "dd-MM-yyyy") : "Same Day"}
                 </div>
               </div>
             )}
           </div>
 
-          <DialogFooter className="pt-2 border-t">
-            <Button className="w-full bg-teal-700 hover:bg-teal-800 text-white" onClick={() => setIsPreviewModalOpen(false)}>
-              Close Pass
+          <DialogFooter className="pt-2 border-t flex gap-2">
+            <CaptureActions cardRef={visitorRef} filename={`Visitor_Pass_${selectedPreviewCert?.certificateNumber || "pass"}`} />
+            <Button className="bg-teal-700 hover:bg-teal-800 text-white" onClick={() => setIsPreviewModalOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useRazorpayPayment } from "@/hooks/useRazorpayPayment";
+import { CaptureActions } from "@/components/CaptureActions";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { FileText, QrCode, Trash2, Edit, Download, Image as ImageIcon, Calendar, Search, Check, Loader2 } from "lucide-react";
@@ -21,6 +23,9 @@ import {
 
 export default function DonationManagementPage() {
   const { user } = useAuth();
+  const receiptRef = useRef<HTMLDivElement>(null);
+
+  const { initiatePayment, isProcessing } = useRazorpayPayment();
   const utils = trpc.useUtils();
 
   // Create Donation Form State
@@ -131,6 +136,22 @@ export default function DonationManagementPage() {
         return;
       }
     }
+
+    // Member online donations go through Razorpay
+    if (user?.role !== "admin" && donationType === "online") {
+      initiatePayment({
+        amount: parseFloat(amount),
+        donorName: donorName || user?.name || "Member",
+        donorEmail: donorEmail || user?.email || "",
+        donorPhone: donorPhone || undefined,
+        purpose: purpose || undefined,
+        onSuccess: () => {
+          utils.donation.getMyDonations.invalidate();
+        },
+      });
+      return;
+    }
+
     createDonationMutation.mutate({
       amount: parseFloat(amount),
       donationType: donationType as "online" | "cash" | "check" | "transfer",
@@ -463,18 +484,7 @@ export default function DonationManagementPage() {
               />
             </div>
 
-            {user?.role !== "admin" && donationType === "online" && (
-              <div className="space-y-1">
-                <Label htmlFor="donation-trans-id" className="text-xs font-semibold text-gray-700">Transaction ID / Reference Number (Optional)</Label>
-                <Input
-                  id="donation-trans-id"
-                  value={transactionId}
-                  onChange={(e) => setTransactionId(e.target.value)}
-                  placeholder="e.g., UPI / Gateway Reference"
-                  className="border-gray-300 text-xs"
-                />
-              </div>
-            )}
+            
 
             {/* Offline / Manual Admin Fields */}
             {user?.role === "admin" && (
@@ -857,7 +867,7 @@ export default function DonationManagementPage() {
 
           <div className="py-4 flex justify-center">
             {selectedReceiptDonation && (
-              <div className="relative w-[320px] h-[452px] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
+              <div ref={receiptRef} className="relative w-[320px] h-[452px] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
                 <img 
                   src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611665/ngo-management/templates/donation_receipt_template.jpg" 
                   alt="Donation Receipt Template" 

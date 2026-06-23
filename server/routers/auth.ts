@@ -83,7 +83,7 @@ export const authRouter = router({
       const existingUser = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
 
       if (existingUser.length > 0) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Email already registered" });
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Registration failed" });
       }
 
       const passwordHash = await hashPassword(input.password);

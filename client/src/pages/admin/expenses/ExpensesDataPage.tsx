@@ -173,11 +173,11 @@ export default function ExpensesDataPage() {
         <table>
           <thead>
             <tr>
-              \${headers.map(h => \`<th>\${h}</th>\`).join("")}
+              ${headers.map(h => `<th>${h}</th>`).join("")}
             </tr>
           </thead>
           <tbody>
-            \${rows.map(r => \`<tr>\${r.map(val => \`<td>\${val}</td>\`).join("")}</tr>\`).join("")}
+            ${rows.map(r => `<tr>${r.map(val => `<td>${val}</td>`).join("")}</tr>`).join("")}
           </tbody>
         </table>
       </body>
@@ -214,9 +214,9 @@ export default function ExpensesDataPage() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(100, 116, 139); // slate-500
-    doc.text(`Generated on: \${format(new Date(), "dd-MM-yyyy HH:mm")}`, 14, 34);
-    doc.text(`Total Records: \${filteredExpenses.length}`, 14, 39);
-    doc.text(`Total Amount: INR \${filteredExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0).toFixed(2)}`, 14, 44);
+    doc.text(`Generated on: ${format(new Date(), "dd-MM-yyyy HH:mm")}`, 14, 34);
+    doc.text(`Total Records: ${filteredExpenses.length}`, 14, 39);
+    doc.text(`Total Amount: INR ${filteredExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0).toFixed(2)}`, 14, 44);
     
     // Draw table
     let y = 52;
@@ -271,7 +271,7 @@ export default function ExpensesDataPage() {
       y += 8;
     });
     
-    doc.save(`expenses_report_\${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    doc.save(`expenses_report_${format(new Date(), "yyyy-MM-dd")}.pdf`);
     toast.success("Expenses report exported to PDF successfully");
   };
 

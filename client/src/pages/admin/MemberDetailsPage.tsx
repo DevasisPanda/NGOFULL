@@ -1,16 +1,23 @@
 import { useRoute, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { FileText, Award, CreditCard, Share2, User, QrCode } from "lucide-react";
+import { FileText, Award, CreditCard, Share2, User, QrCode, ShieldAlert } from "lucide-react";
 import { format } from "date-fns";
+import { CaptureActions } from "@/components/CaptureActions";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 export default function MemberDetailsPage() {
   const [, params] = useRoute("/admin/users/detail/:id");
   const [, setLocation] = useLocation();
   const userId = params?.id ? parseInt(params.id) : 0;
+
+  const appointmentRef = useRef<HTMLDivElement>(null);
+  const certRef = useRef<HTMLDivElement>(null);
+  const idCardRefMP = useRef<HTMLDivElement>(null);
 
   const utils = trpc.useUtils();
   
@@ -47,6 +54,31 @@ export default function MemberDetailsPage() {
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
   const [isIDCardModalOpen, setIsIDCardModalOpen] = useState(false);
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [resetPasswordVal, setResetPasswordVal] = useState("");
+
+  const resetPasswordMutation = trpc.admin.resetUserPassword.useMutation({
+    onSuccess: (res) => {
+      toast.success(res.message || "User password has been successfully reset!");
+      setIsResetPasswordModalOpen(false);
+      setResetPasswordVal("");
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to reset password");
+    }
+  });
+
+  const handleResetPasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (resetPasswordVal.length < 6) {
+      toast.error("Password must be at least 6 characters long");
+      return;
+    }
+    resetPasswordMutation.mutate({
+      userId,
+      newPassword: resetPasswordVal,
+    });
+  };
 
   if (isLoading) {
     return <div className="flex h-screen items-center justify-center">Loading member details...</div>;
@@ -285,6 +317,14 @@ export default function MemberDetailsPage() {
             </div>
           </div>
 
+          {/* Reset Password Button */}
+          <Button 
+            className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold mt-2"
+            onClick={() => setIsResetPasswordModalOpen(true)}
+          >
+            Reset User Password
+          </Button>
+
           {/* Go Back Button */}
           <Button 
             className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold mt-2"
@@ -318,7 +358,7 @@ export default function MemberDetailsPage() {
 
           {latestLetter && (
             <div className="py-4 flex justify-center">
-              <div className="relative w-full max-w-lg aspect-[1133/1600] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
+              <div ref={appointmentRef} className="relative w-full max-w-lg aspect-[1133/1600] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
                 <img 
                   src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611664/ngo-management/templates/appointment_letter_template.jpg" 
                   alt="Appointment Letter Template" 
@@ -361,9 +401,10 @@ export default function MemberDetailsPage() {
             </div>
           )}
 
-          <DialogFooter>
-            <Button className="w-full bg-teal-700 hover:bg-teal-800 text-white" onClick={() => setIsAppointmentModalOpen(false)}>
-              Close Preview
+          <DialogFooter className="flex gap-2">
+            <CaptureActions cardRef={appointmentRef} filename={`Appointment_Letter_${member?.user?.name?.replace(/\s+/g, "_") || "member"}`} />
+            <Button className="bg-teal-700 hover:bg-teal-800 text-white" onClick={() => setIsAppointmentModalOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -371,7 +412,7 @@ export default function MemberDetailsPage() {
 
       {/* 2. Membership Certificate Preview Modal */}
       <Dialog open={isCertificateModalOpen} onOpenChange={setIsCertificateModalOpen}>
-        <DialogContent className="max-w-2xl bg-white p-6">
+        <DialogContent className="max-w-2xl bg-white p-6 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-teal-800 flex items-center gap-2">
               <Award className="w-5 h-5" /> Membership Certificate Preview
@@ -380,42 +421,82 @@ export default function MemberDetailsPage() {
 
           {membershipCert && (
             <div className="py-4 flex justify-center">
-              <div className="relative w-full max-w-md aspect-[904/1354] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
-                <img 
-                  src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611666/ngo-management/templates/membership_certificate_template.jpg" 
-                  alt="Membership Certificate Template" 
-                  className="w-full h-full object-cover" 
-                />
-                
-                {/* Overlays */}
-                {/* Name Overlay */}
-                <div className="absolute top-[48%] left-0 right-0 text-center px-8">
-                  <span className="font-serif text-[15px] sm:text-[20px] text-slate-800 font-bold tracking-wide italic inline-block">
-                    {member.user?.name}
-                  </span>
-                </div>
+              {membershipCert.certificateType === 'achievement' ? (
+                /* Achievement Template (Landscape) */
+                <div ref={certRef} className="relative w-full max-w-xl aspect-[1.414/1] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
+                  <img 
+                    src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611663/ngo-management/templates/achievement_certificate_template.jpg" 
+                    alt="Achievement Certificate Template" 
+                    className="w-full h-full object-cover" 
+                  />
+                  
+                  {/* Name Overlay */}
+                  <div className="absolute top-[48%] left-0 right-0 text-center px-8">
+                    <span className="font-serif text-[15px] sm:text-[20px] text-slate-800 font-bold tracking-wide italic inline-block">
+                      {member.user?.name}
+                    </span>
+                  </div>
 
-                {/* Description Overlay */}
-                <div className="absolute top-[61%] left-[10%] right-[10%] text-center text-slate-600 text-[8px] sm:text-[11px] leading-relaxed">
-                  {membershipCert.description || `This certificate is officially presented to acknowledge their dedication and valuable service as a registered member of the Valmiki Samaj Charitable Trust.`}
-                </div>
+                  {/* Description Overlay */}
+                  <div className="absolute top-[61%] left-1/2 -translate-x-1/2 w-[80%] text-center text-slate-600 text-[8px] sm:text-[11px] leading-relaxed max-w-lg">
+                    {membershipCert.description || `This certificate is officially presented to acknowledge their dedication and valuable service as a registered achievement recipient of the Valmiki Samaj Charitable Trust.`}
+                  </div>
 
-                {/* Issue Date Overlay */}
-                <div className="absolute bottom-[13%] left-[17%] text-[7px] sm:text-[9.5px] text-slate-600 font-medium font-mono">
-                  {membershipCert.issueDate ? format(new Date(membershipCert.issueDate), "dd/MM/yyyy") : ""}
-                </div>
+                  {/* Issue Date Overlay */}
+                  <div className="absolute bottom-[13%] left-[17%] text-[7px] sm:text-[9.5px] text-slate-600 font-medium font-mono">
+                    {membershipCert.issueDate ? format(new Date(membershipCert.issueDate), "dd/MM/yyyy") : ""}
+                  </div>
 
-                {/* Certificate Number Overlay */}
-                <div className="absolute bottom-[13%] right-[17%] text-[7px] sm:text-[9.5px] text-slate-600 font-medium font-mono">
-                  {membershipCert.certificateNumber}
+                  {/* Certificate Number Overlay */}
+                  <div className="absolute bottom-[13%] right-[17%] text-[7px] sm:text-[9.5px] text-slate-600 font-medium font-mono">
+                    {membershipCert.certificateNumber}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                /* Membership/Volunteer Templates (Portrait) */
+                <div ref={certRef} className="relative w-full max-w-md aspect-[904/1354] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
+                  <img 
+                    src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611666/ngo-management/templates/membership_certificate_template.jpg" 
+                    alt="Membership Certificate Template" 
+                    className="w-full h-full object-cover" 
+                  />
+                  
+                  {/* Name Overlay */}
+                  <div className="absolute left-0 right-0 text-center px-8" style={{ top: '39.14%' }}>
+                    <span className="font-serif text-[15px] sm:text-[20px] text-slate-800 font-bold tracking-wide italic inline-block">
+                      {member.user?.name}
+                    </span>
+                  </div>
+
+                  {/* Membership Number */}
+                  <div className="absolute text-center" style={{ top: '54.65%', left: '17.7%', transform: 'translateX(-50%)', width: '30%' }}>
+                    <span className="font-sans text-[9px] sm:text-[12px] text-slate-800 font-bold">
+                      {membershipCert.certificateNumber}
+                    </span>
+                  </div>
+
+                  {/* Issue Date */}
+                  <div className="absolute text-center" style={{ top: '54.65%', left: '51.44%', transform: 'translateX(-50%)', width: '30%' }}>
+                    <span className="font-sans text-[9px] sm:text-[12px] text-slate-800 font-bold">
+                      {membershipCert.issueDate ? format(new Date(membershipCert.issueDate), "dd/MM/yyyy") : ""}
+                    </span>
+                  </div>
+
+                  {/* Expiry Date */}
+                  <div className="absolute text-center" style={{ top: '54.65%', left: '82.41%', transform: 'translateX(-50%)', width: '30%' }}>
+                    <span className="font-sans text-[9px] sm:text-[12px] text-slate-800 font-bold">
+                      {membershipCert.expiryDate ? format(new Date(membershipCert.expiryDate), "dd/MM/yyyy") : "Lifetime"}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          <DialogFooter>
-            <Button className="w-full bg-teal-700 hover:bg-teal-800 text-white" onClick={() => setIsCertificateModalOpen(false)}>
-              Close Preview
+          <DialogFooter className="pt-2 border-t flex gap-2">
+            <CaptureActions cardRef={certRef} filename={`Certificate_${membershipCert?.certificateNumber || "document"}`} />
+            <Button className="bg-teal-700 hover:bg-teal-800 text-white" onClick={() => setIsCertificateModalOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -423,7 +504,7 @@ export default function MemberDetailsPage() {
 
       {/* 3. ID Card Preview Modal */}
       <Dialog open={isIDCardModalOpen} onOpenChange={setIsIDCardModalOpen}>
-        <DialogContent className="max-w-md bg-white p-6">
+        <DialogContent className="max-w-2xl bg-white p-6 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-teal-800 flex items-center gap-2">
               <CreditCard className="w-5 h-5" /> Digital ID Card Preview
@@ -432,7 +513,7 @@ export default function MemberDetailsPage() {
 
           {latestIDCard && (
             <div className="py-4 flex justify-center">
-              <div className="relative w-[280px] h-[420px] rounded-2xl overflow-hidden border border-gray-200 shadow-md bg-teal-50 flex flex-col items-center">
+              <div ref={idCardRefMP} className="relative w-full max-w-xl aspect-[1.5/1] rounded-2xl overflow-hidden border border-gray-200 shadow-md bg-teal-50">
                 <img 
                   src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611667/ngo-management/templates/generate_id_template.jpg" 
                   alt="ID Card Template" 
@@ -440,7 +521,7 @@ export default function MemberDetailsPage() {
                 />
                 
                 {/* Profile Photo Overlay */}
-                <div className="absolute top-[110px] left-1/2 -translate-x-1/2 w-[90px] h-[90px] rounded-full overflow-hidden border-2 border-white shadow bg-white">
+                <div className="absolute top-[41.5%] left-[23%] -translate-x-1/2 w-[16%] aspect-[1/1] rounded-xl overflow-hidden shadow-sm bg-white border border-gray-100 flex items-center justify-center">
                   {member.user?.profileImage ? (
                     <img src={member.user.profileImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
@@ -450,35 +531,90 @@ export default function MemberDetailsPage() {
                   )}
                 </div>
 
-                {/* Name & Designation */}
-                <div className="absolute top-[220px] left-0 right-0 text-center px-4">
-                  <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wide line-clamp-1">{member.user?.name}</h4>
-                  <p className="text-[10px] font-bold text-teal-700 uppercase tracking-wider mt-0.5 line-clamp-1">{member.user?.designation || 'Trust Member'}</p>
+                {/* Name & Designation Overlay */}
+                <div className="absolute top-[32%] left-[4.5%] w-[40%] text-center">
+                  <h4 className="font-extrabold text-[9px] sm:text-[13px] text-red-600 uppercase tracking-wide line-clamp-1">{member.user?.name}</h4>
+                  <p className="text-[7px] sm:text-[9.5px] font-bold text-teal-700 uppercase tracking-wider mt-0.5 line-clamp-1">{member.user?.designation || 'Trust Member'}</p>
                 </div>
 
-                {/* Details list */}
-                <div className="absolute top-[275px] left-4 right-4 text-[8px] text-slate-700 font-semibold space-y-1 bg-white/85 p-2.5 rounded-lg border border-teal-100">
-                  <div className="flex justify-between border-b border-slate-100/50 pb-0.5"><span className="text-slate-400">Card No:</span><span className="font-mono text-slate-900">{latestIDCard.cardNumber}</span></div>
-                  <div className="flex justify-between border-b border-slate-100/50 pb-0.5"><span className="text-slate-400">Reg No:</span><span className="font-mono text-slate-900">{member.membershipNumber}</span></div>
-                  <div className="flex justify-between border-b border-slate-100/50 pb-0.5"><span className="text-slate-400">Issue Date:</span><span>{latestIDCard.issueDate ? format(new Date(latestIDCard.issueDate), "dd/MM/yyyy") : ""}</span></div>
-                  <div className="flex justify-between"><span className="text-slate-400">Valid Till:</span><span>{latestIDCard.expiryDate ? format(new Date(latestIDCard.expiryDate), "dd/MM/yyyy") : "Lifetime"}</span></div>
+                {/* Left Side Details */}
+                {/* Card No */}
+                <div className="absolute top-[62.5%] left-[28%] text-[8px] sm:text-[12px] font-bold text-slate-800">
+                  {latestIDCard.cardNumber}
                 </div>
 
-                {/* QR Indicator */}
-                <div className="absolute bottom-[18px] left-1/2 -translate-x-1/2 flex flex-col items-center">
-                  <div className="w-10 h-10 bg-white p-0.5 border border-teal-200 rounded flex items-center justify-center">
-                    <QrCode className="w-8 h-8 text-teal-800 opacity-60" />
-                  </div>
+                {/* Mobile No */}
+                <div className="absolute top-[67%] left-[17%] text-[8px] sm:text-[12px] font-bold text-slate-800">
+                  {member.user?.phone || 'N/A'}
+                </div>
+
+                {/* Email */}
+                <div className="absolute top-[71%] left-[17%] text-[7px] sm:text-[10px] font-bold text-slate-800 line-clamp-1 w-[35%]">
+                  {member.user?.email || 'N/A'}
+                </div>
+
+                {/* City */}
+                <div className="absolute top-[75%] left-[13%] text-[8px] sm:text-[12px] font-bold text-slate-800">
+                  {member.user?.city || 'N/A'}
+                </div>
+
+                {/* Right Side Details */}
+                {/* Joining Date */}
+                <div className="absolute top-[79.5%] left-[78%] text-[8px] sm:text-[12px] font-bold text-[#0f2454]">
+                  {latestIDCard.issueDate ? format(new Date(latestIDCard.issueDate), "dd-MM-yyyy") : ""}
+                </div>
+
+                {/* Expiry Date */}
+                <div className="absolute top-[84%] left-[78%] text-[8px] sm:text-[12px] font-bold text-[#0f2454]">
+                  {latestIDCard.expiryDate ? format(new Date(latestIDCard.expiryDate), "dd-MM-yyyy") : "Lifetime"}
                 </div>
               </div>
             </div>
           )}
 
-          <DialogFooter>
-            <Button className="w-full bg-teal-700 hover:bg-teal-800 text-white" onClick={() => setIsIDCardModalOpen(false)}>
-              Close Preview
+          <DialogFooter className="pt-2 border-t flex gap-2">
+            <CaptureActions cardRef={idCardRefMP} filename={`ID_Card_${member?.user?.name?.replace(/\s+/g, "_") || "member"}`} />
+            <Button className="bg-teal-700 hover:bg-teal-800 text-white" onClick={() => setIsIDCardModalOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 4. Reset User Password Modal */}
+      <Dialog open={isResetPasswordModalOpen} onOpenChange={setIsResetPasswordModalOpen}>
+        <DialogContent className="max-w-md bg-white p-6">
+          <DialogHeader>
+            <DialogTitle className="text-amber-800 flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5 text-amber-600" /> Administrative Password Reset
+            </DialogTitle>
+            <DialogDescription>
+              Overwrite the password for user <strong>{member.user?.name}</strong> ({member.user?.email}).
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleResetPasswordSubmit} className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="admin-new-password">New Password *</Label>
+              <Input
+                id="admin-new-password"
+                type="password"
+                placeholder="Enter new password (min. 6 characters)"
+                value={resetPasswordVal}
+                onChange={(e) => setResetPasswordVal(e.target.value)}
+                required
+              />
+            </div>
+
+            <DialogFooter className="pt-4 border-t gap-2">
+              <Button type="button" variant="outline" onClick={() => setIsResetPasswordModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-amber-600 hover:bg-amber-700 text-white font-bold" disabled={resetPasswordMutation.isPending}>
+                {resetPasswordMutation.isPending ? "Resetting..." : "Reset Password"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

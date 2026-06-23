@@ -5,10 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useRazorpayPayment } from "@/hooks/useRazorpayPayment";
 import { toast } from "sonner";
 
 export default function ActiveCampaignsPage() {
   const { user } = useAuth();
+  const { initiatePayment, isProcessing } = useRazorpayPayment();
   const [selectedCampaign, setSelectedCampaign] = useState<number | null>(null);
   const [filterType, setFilterType] = useState<"all" | "donation" | "volunteer">("all");
   const [filterAmountStr, setFilterAmountStr] = useState("");
@@ -261,7 +263,17 @@ export default function ActiveCampaignsPage() {
                   </div>
                   <p className="text-sm text-gray-600 mt-2">{campaignStats.percentage.toFixed(1)}% of goal reached</p>
                 </div>
-                <Button className="w-full">Donate to Campaign</Button>
+                <Button className="w-full" disabled={isProcessing} onClick={() => {
+                  const campaign = campaigns?.find(c => c.id === selectedCampaign);
+                  if (!campaign) return;
+                  initiatePayment({
+                    amount: 100,
+                    donorName: user?.name || user?.email || "Donor",
+                    donorEmail: user?.email || "",
+                    purpose: `Donation to ${campaign.title}`,
+                    campaignId: selectedCampaign!,
+                  });
+                }}>{isProcessing ? "Opening Checkout..." : "Donate to Campaign"}</Button>
               </CardContent>
             </Card>
           ) : (

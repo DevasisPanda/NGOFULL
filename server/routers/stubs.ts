@@ -8,11 +8,6 @@ import { publicProcedure, router, protectedProcedure, adminProcedure } from "../
  */
 export const stubRouters = {
 
-  activity: router({
-    list: publicProcedure.input(z.object({ status: z.string().optional() })).query(async () => []),
-    create: protectedProcedure.input(z.object({ title: z.string(), description: z.string() })).mutation(async () => ({ success: true })),
-  }),
-
   idCard: router({
     generate: protectedProcedure.input(z.object({ memberId: z.number() })).mutation(async () => ({ success: true })),
     download: protectedProcedure.input(z.object({ cardId: z.number() })).query(async () => ({ url: "" })),
@@ -43,10 +38,6 @@ export const stubRouters = {
     getCampaignReport: adminProcedure.query(async () => []),
   }),
 
-  website: router({
-    getPages: publicProcedure.query(async () => []),
-    updatePage: adminProcedure.input(z.object({ pageId: z.number(), content: z.string() })).mutation(async () => ({ success: true })),
-  }),
 
   qrVerification: router({
     verify: publicProcedure.input(z.object({ qrCode: z.string() })).query(async () => ({ valid: false })),

@@ -3,20 +3,42 @@ import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Filter, Trash2, Edit, Eye, FileText, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Filter, Trash2, Edit, Eye, FileText, ChevronsUpDown, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLocation } from "wouter";
+import { toast } from "sonner";
 
 export default function ActiveMembershipsPage() {
-  const { data, isLoading } = trpc.membership.getActiveWithDetails.useQuery({ page: 1, pageSize: 1000 });
+  const { data, isLoading, isError } = trpc.membership.getActiveWithDetails.useQuery({ page: 1, pageSize: 1000 });
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [, setLocation] = useLocation();
+  const utils = trpc.useUtils();
 
+  const blockMutation = trpc.admin.blockUser.useMutation({
+    onSuccess: () => { toast.success("User blocked"); utils.membership.getActiveWithDetails.invalidate(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const deactivateMutation = trpc.admin.updateUser.useMutation({
+    onSuccess: () => { toast.success("Membership deactivated"); utils.membership.getActiveWithDetails.invalidate(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const deleteMembershipMutation = trpc.membership.delete.useMutation({
+    onSuccess: () => { toast.success("Membership deleted"); utils.membership.getActiveWithDetails.invalidate(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  if (isError) {
+    return <div className="p-8 text-center text-red-500">Failed to load memberships. <button className="underline ml-1" onClick={() => window.location.reload()}>Retry</button></div>;
+  }
   if (isLoading) {
-    return <div className="p-8">Loading active memberships...</div>;
+    return <div className="flex items-center justify-center p-12"><Spinner className="size-6 text-gray-400" /></div>;
   }
 
   const activeMembers = data?.items || [];
@@ -64,7 +86,13 @@ export default function ActiveMembershipsPage() {
         <Button variant="outline" className="flex gap-2 items-center text-gray-700 bg-white">
           <Filter className="w-4 h-4" /> Filter
         </Button>
-        <Button variant="destructive" className="bg-red-500 hover:bg-red-600">
+        <Button variant="destructive" className="bg-red-500 hover:bg-red-600" onClick={() => {
+          if (selectedIds.size === 0) { toast.error("No members selected"); return; }
+          if (window.confirm(`Delete ${selectedIds.size} selected membership(s)? This cannot be undone.`)) {
+            selectedIds.forEach((id) => deleteMembershipMutation.mutate({ membershipId: id }));
+            setSelectedIds(new Set());
+          }
+        }}>
           Delete Selected
         </Button>
       </div>
@@ -110,7 +138,15 @@ export default function ActiveMembershipsPage() {
                   </th>
                   <th className="px-2 py-3 border-r border-gray-200 w-16 align-middle">
                     <div className="flex flex-col items-center justify-center text-gray-500 font-bold gap-1">
-                      <input type="checkbox" className="rounded border-gray-300" />
+                      <input type="checkbox" className="rounded border-gray-300"
+                        checked={selectedIds.size === paginatedMembers.length && paginatedMembers.length > 0}
+                        onChange={() => {
+                          if (selectedIds.size === paginatedMembers.length) {
+                            setSelectedIds(new Set());
+                          } else {
+                            setSelectedIds(new Set(paginatedMembers.map(m => m.id)));
+                          }
+                        }} />
                       <div className="flex items-center gap-1">
                         <span>Select All</span>
                         <ChevronsUpDown className="w-3 h-3 opacity-50" />
@@ -139,7 +175,14 @@ export default function ActiveMembershipsPage() {
                         {startIndex + index + 1}
                       </td>
                       <td className="px-2 py-2 border-r border-gray-200 text-center">
-                        <input type="checkbox" className="rounded border-gray-300" />
+                        <input type="checkbox" className="rounded border-gray-300"
+                          checked={selectedIds.has(member.id)}
+                          onChange={() => {
+                            const next = new Set(selectedIds);
+                            if (next.has(member.id)) next.delete(member.id);
+                            else next.add(member.id);
+                            setSelectedIds(next);
+                          }} />
                       </td>
                       <td className="px-3 py-2 border-r border-gray-200 text-gray-800 leading-snug whitespace-normal">
                         <div className="flex items-center gap-2.5">
@@ -176,10 +219,20 @@ export default function ActiveMembershipsPage() {
                       </td>
                       <td className="px-2 py-2 border-r border-gray-200 text-center">
                         <div className="flex justify-center gap-1">
-                          <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100">
+                          <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100" onClick={() => {
+                            const name = member.name || member.email || "this user";
+                            if (window.confirm(`Deactivate ${name}? The user will be marked inactive.`)) {
+                              deactivateMutation.mutate({ userId: member.userId, status: "inactive" });
+                            }
+                          }}>
                             Deactivate
                           </Button>
-                          <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-red-600 bg-red-50 border-red-200 hover:bg-red-100">
+                          <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-red-600 bg-red-50 border-red-200 hover:bg-red-100" onClick={() => {
+                            const name = member.name || member.email || "this user";
+                            if (window.confirm(`Block ${name}? They will lose access until unblocked.`)) {
+                              blockMutation.mutate({ userId: member.userId });
+                            }
+                          }}>
                             Block
                           </Button>
                         </div>
@@ -192,10 +245,15 @@ export default function ActiveMembershipsPage() {
                       </td>
                       <td className="px-2 py-2 text-center">
                         <div className="flex justify-center gap-1">
-                          <Button size="icon" variant="outline" className="h-7 w-7 text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100">
+                          <Button size="icon" variant="outline" className="h-7 w-7 text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100" onClick={() => setLocation(`/admin/users/detail/${member.userId}`)}>
                             <Edit className="w-3.5 h-3.5" />
                           </Button>
-                          <Button size="icon" variant="outline" className="h-7 w-7 text-red-600 bg-red-50 border-red-200 hover:bg-red-100">
+                          <Button size="icon" variant="outline" className="h-7 w-7 text-red-600 bg-red-50 border-red-200 hover:bg-red-100" onClick={() => {
+                            const name = member.name || member.email || `membership #${member.id}`;
+                            if (window.confirm(`Delete membership for ${name}? This removes the membership record. Cannot be undone.`)) {
+                              deleteMembershipMutation.mutate({ membershipId: member.id });
+                            }
+                          }}>
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </div>
