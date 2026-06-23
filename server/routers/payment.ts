@@ -59,11 +59,7 @@ export const paymentRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-<<<<<<< HEAD
-      const razorpay = getRazorpay();
-=======
       const razorpay = await getRazorpay();
->>>>>>> a3cd76b (Add Razorpay payments, certificate builder, CaptureActions, registration validation, and visitor pass generation)
 
       // Create order with Razorpay (amount in paise)
       const razorpayOrder = await razorpay.orders.create({
