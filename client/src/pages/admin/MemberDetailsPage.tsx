@@ -4,6 +4,7 @@ import { FileText, Award, CreditCard, Share2, User, QrCode, ShieldAlert } from "
 import { format } from "date-fns";
 import { CaptureActions } from "@/components/CaptureActions";
 import { Button } from "@/components/ui/button";
+import { VerifiableDocument } from "@/components/VerifiableDocument";
 import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -49,6 +50,8 @@ export default function MemberDetailsPage() {
     { memberId: member?.id },
     { enabled: !!member?.id }
   );
+
+  const { data: dbTemplates } = trpc.document.getTemplateConfigs.useQuery();
 
   // Modal states
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
@@ -358,46 +361,21 @@ export default function MemberDetailsPage() {
 
           {latestLetter && (
             <div className="py-4 flex justify-center">
-              <div ref={appointmentRef} className="relative w-full max-w-lg aspect-[1133/1600] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
-                <img 
-                  src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611664/ngo-management/templates/appointment_letter_template.jpg" 
-                  alt="Appointment Letter Template" 
-                  className="w-full h-full object-cover" 
-                />
-                
-                {/* Overlays */}
-                <div className="absolute top-[16.5%] left-[10%] font-mono text-[8px] sm:text-[11px] text-gray-800 font-semibold">
-                  Ref: {latestLetter.letterNumber}
-                </div>
-                <div className="absolute top-[16.5%] right-[10%] font-mono text-[8px] sm:text-[11px] text-gray-800 font-semibold">
-                  Date: {format(new Date(latestLetter.appointmentDate), "dd/MM/yyyy")}
-                </div>
-                <div className="absolute top-[21.5%] left-[10%] text-left text-[9px] sm:text-[12px] text-gray-800 leading-snug whitespace-pre-line font-medium">
-                  To,<br />
-                  <strong>{member.user?.name}</strong><br />
-                  {member.user?.address || "NGO Member Address"}<br />
-                  {member.user?.city || ""}, {member.user?.state || ""} {member.user?.pinCode || ""}
-                </div>
-                
-                <div className="absolute top-[32.5%] left-[10%] right-[10%] text-center text-[9px] sm:text-[13px] font-bold text-slate-900 border-b border-gray-300 pb-1">
-                  SUB: APPOINTMENT FOR THE POST OF "{latestLetter.position.toUpperCase()}"
-                </div>
-                
-                <div className="absolute top-[38.5%] left-[10%] right-[10%] text-justify text-[7px] sm:text-[11px] text-slate-700 leading-relaxed whitespace-pre-line max-h-[42%] overflow-y-auto">
-                  {latestLetter.letterContent || `Dear ${member.user?.name},\n\nWe are pleased to appoint you for the post of ${latestLetter.position} in the ${latestLetter.department || 'Volunteer'} department of Valmiki Samaj Charitable Trust.\n\nYour appointment is effective from ${format(new Date(latestLetter.appointmentDate), "dd MMMM yyyy")}. We trust that your dedication and skills will be highly beneficial to our organization's mission.`}
-                </div>
-                
-                <div className="absolute bottom-[9%] left-[10%] text-[8px] sm:text-[10px] font-bold text-slate-800 leading-tight">
-                  Authorized Signatory<br />
-                  <span className="text-gray-500 font-normal">Valmiki Samaj Trust</span>
-                </div>
-
-                <div className="absolute bottom-[8%] right-[10%]">
-                  <div className="w-12 h-12 bg-white p-0.5 border rounded flex items-center justify-center">
-                    <QrCode className="w-10 h-10 text-teal-800 opacity-60" />
-                  </div>
-                </div>
-              </div>
+              <VerifiableDocument
+                templateId="appointment"
+                fieldValues={{
+                  letterNumber: latestLetter.letterNumber,
+                  name1: member.user?.name || "",
+                  name2: member.user?.name || "",
+                  post: latestLetter.position,
+                  mobile: member.user?.phone || "",
+                  fromDate: format(new Date(latestLetter.appointmentDate), "dd/MM/yyyy"),
+                  toDate: "Ongoing"
+                }}
+                dbTemplates={dbTemplates}
+                cardRef={appointmentRef}
+                className="max-w-lg mx-auto rounded-lg"
+              />
             </div>
           )}
 
@@ -421,75 +399,27 @@ export default function MemberDetailsPage() {
 
           {membershipCert && (
             <div className="py-4 flex justify-center">
-              {membershipCert.certificateType === 'achievement' ? (
-                /* Achievement Template (Landscape) */
-                <div ref={certRef} className="relative w-full max-w-xl aspect-[1.414/1] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
-                  <img 
-                    src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611663/ngo-management/templates/achievement_certificate_template.jpg" 
-                    alt="Achievement Certificate Template" 
-                    className="w-full h-full object-cover" 
-                  />
-                  
-                  {/* Name Overlay */}
-                  <div className="absolute top-[48%] left-0 right-0 text-center px-8">
-                    <span className="font-serif text-[15px] sm:text-[20px] text-slate-800 font-bold tracking-wide italic inline-block">
-                      {member.user?.name}
-                    </span>
-                  </div>
-
-                  {/* Description Overlay */}
-                  <div className="absolute top-[61%] left-1/2 -translate-x-1/2 w-[80%] text-center text-slate-600 text-[8px] sm:text-[11px] leading-relaxed max-w-lg">
-                    {membershipCert.description || `This certificate is officially presented to acknowledge their dedication and valuable service as a registered achievement recipient of the Valmiki Samaj Charitable Trust.`}
-                  </div>
-
-                  {/* Issue Date Overlay */}
-                  <div className="absolute bottom-[13%] left-[17%] text-[7px] sm:text-[9.5px] text-slate-600 font-medium font-mono">
-                    {membershipCert.issueDate ? format(new Date(membershipCert.issueDate), "dd/MM/yyyy") : ""}
-                  </div>
-
-                  {/* Certificate Number Overlay */}
-                  <div className="absolute bottom-[13%] right-[17%] text-[7px] sm:text-[9.5px] text-slate-600 font-medium font-mono">
-                    {membershipCert.certificateNumber}
-                  </div>
-                </div>
-              ) : (
-                /* Membership/Volunteer Templates (Portrait) */
-                <div ref={certRef} className="relative w-full max-w-md aspect-[904/1354] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
-                  <img 
-                    src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611666/ngo-management/templates/membership_certificate_template.jpg" 
-                    alt="Membership Certificate Template" 
-                    className="w-full h-full object-cover" 
-                  />
-                  
-                  {/* Name Overlay */}
-                  <div className="absolute left-0 right-0 text-center px-8" style={{ top: '39.14%' }}>
-                    <span className="font-serif text-[15px] sm:text-[20px] text-slate-800 font-bold tracking-wide italic inline-block">
-                      {member.user?.name}
-                    </span>
-                  </div>
-
-                  {/* Membership Number */}
-                  <div className="absolute text-center" style={{ top: '54.65%', left: '17.7%', transform: 'translateX(-50%)', width: '30%' }}>
-                    <span className="font-sans text-[9px] sm:text-[12px] text-slate-800 font-bold">
-                      {membershipCert.certificateNumber}
-                    </span>
-                  </div>
-
-                  {/* Issue Date */}
-                  <div className="absolute text-center" style={{ top: '54.65%', left: '51.44%', transform: 'translateX(-50%)', width: '30%' }}>
-                    <span className="font-sans text-[9px] sm:text-[12px] text-slate-800 font-bold">
-                      {membershipCert.issueDate ? format(new Date(membershipCert.issueDate), "dd/MM/yyyy") : ""}
-                    </span>
-                  </div>
-
-                  {/* Expiry Date */}
-                  <div className="absolute text-center" style={{ top: '54.65%', left: '82.41%', transform: 'translateX(-50%)', width: '30%' }}>
-                    <span className="font-sans text-[9px] sm:text-[12px] text-slate-800 font-bold">
-                      {membershipCert.expiryDate ? format(new Date(membershipCert.expiryDate), "dd/MM/yyyy") : "Lifetime"}
-                    </span>
-                  </div>
-                </div>
-              )}
+              <VerifiableDocument
+                templateId={membershipCert.certificateType}
+                fieldValues={
+                  membershipCert.certificateType === 'achievement'
+                    ? {
+                        fullName: member.user?.name || "",
+                        description: membershipCert.description || "",
+                        issueDate: membershipCert.issueDate ? format(new Date(membershipCert.issueDate), "dd/MM/yyyy") : "",
+                        certificateNumber: membershipCert.certificateNumber,
+                      }
+                    : {
+                        fullName: member.user?.name || "",
+                        membershipNumber: membershipCert.certificateNumber,
+                        joinDate: membershipCert.issueDate ? format(new Date(membershipCert.issueDate), "dd/MM/yyyy") : "",
+                        expiryDate: membershipCert.expiryDate ? format(new Date(membershipCert.expiryDate), "dd/MM/yyyy") : "Lifetime",
+                      }
+                }
+                dbTemplates={dbTemplates}
+                cardRef={certRef}
+                className="max-w-lg mx-auto rounded-lg"
+              />
             </div>
           )}
 
@@ -513,62 +443,33 @@ export default function MemberDetailsPage() {
 
           {latestIDCard && (
             <div className="py-4 flex justify-center">
-              <div ref={idCardRefMP} className="relative w-full max-w-xl aspect-[1.5/1] rounded-2xl overflow-hidden border border-gray-200 shadow-md bg-teal-50">
-                <img 
-                  src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611667/ngo-management/templates/generate_id_template.jpg" 
-                  alt="ID Card Template" 
-                  className="w-full h-full object-cover" 
-                />
-                
+              <VerifiableDocument
+                templateId="id_card"
+                fieldValues={{
+                  fullName: member.user?.name || "",
+                  designation: member.user?.designation || "Trust Member",
+                  cardNumber: latestIDCard.cardNumber,
+                  mobile: member.user?.phone || "N/A",
+                  email: member.user?.email || "N/A",
+                  city: member.user?.city || "N/A",
+                  issueDate: latestIDCard.issueDate ? format(new Date(latestIDCard.issueDate), "dd-MM-yyyy") : "",
+                  expiryDate: latestIDCard.expiryDate ? format(new Date(latestIDCard.expiryDate), "dd-MM-yyyy") : "Lifetime",
+                }}
+                dbTemplates={dbTemplates}
+                cardRef={idCardRefMP}
+                className="max-w-lg mx-auto rounded-lg"
+              >
                 {/* Profile Photo Overlay */}
                 <div className="absolute top-[41.5%] left-[23%] -translate-x-1/2 w-[16%] aspect-[1/1] rounded-xl overflow-hidden shadow-sm bg-white border border-gray-100 flex items-center justify-center">
                   {member.user?.profileImage ? (
                     <img src={member.user.profileImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-teal-800 text-2xl font-bold bg-teal-100">
+                    <div className="w-full h-full flex items-center justify-center text-teal-800 text-[2.5cqw] font-bold bg-teal-100">
                       {member.user?.name?.slice(0, 2).toUpperCase() || 'MB'}
                     </div>
                   )}
                 </div>
-
-                {/* Name & Designation Overlay */}
-                <div className="absolute top-[32%] left-[4.5%] w-[40%] text-center">
-                  <h4 className="font-extrabold text-[9px] sm:text-[13px] text-red-600 uppercase tracking-wide line-clamp-1">{member.user?.name}</h4>
-                  <p className="text-[7px] sm:text-[9.5px] font-bold text-teal-700 uppercase tracking-wider mt-0.5 line-clamp-1">{member.user?.designation || 'Trust Member'}</p>
-                </div>
-
-                {/* Left Side Details */}
-                {/* Card No */}
-                <div className="absolute top-[62.5%] left-[28%] text-[8px] sm:text-[12px] font-bold text-slate-800">
-                  {latestIDCard.cardNumber}
-                </div>
-
-                {/* Mobile No */}
-                <div className="absolute top-[67%] left-[17%] text-[8px] sm:text-[12px] font-bold text-slate-800">
-                  {member.user?.phone || 'N/A'}
-                </div>
-
-                {/* Email */}
-                <div className="absolute top-[71%] left-[17%] text-[7px] sm:text-[10px] font-bold text-slate-800 line-clamp-1 w-[35%]">
-                  {member.user?.email || 'N/A'}
-                </div>
-
-                {/* City */}
-                <div className="absolute top-[75%] left-[13%] text-[8px] sm:text-[12px] font-bold text-slate-800">
-                  {member.user?.city || 'N/A'}
-                </div>
-
-                {/* Right Side Details */}
-                {/* Joining Date */}
-                <div className="absolute top-[79.5%] left-[78%] text-[8px] sm:text-[12px] font-bold text-[#0f2454]">
-                  {latestIDCard.issueDate ? format(new Date(latestIDCard.issueDate), "dd-MM-yyyy") : ""}
-                </div>
-
-                {/* Expiry Date */}
-                <div className="absolute top-[84%] left-[78%] text-[8px] sm:text-[12px] font-bold text-[#0f2454]">
-                  {latestIDCard.expiryDate ? format(new Date(latestIDCard.expiryDate), "dd-MM-yyyy") : "Lifetime"}
-                </div>
-              </div>
+              </VerifiableDocument>
             </div>
           )}
 

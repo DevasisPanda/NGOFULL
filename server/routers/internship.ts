@@ -36,7 +36,7 @@ export const internshipRouter = router({
         internshipId: z.number(),
         applicantName: z.string().min(2),
         applicantEmail: z.string().email(),
-        applicantPhone: z.string().optional(),
+        applicantPhone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional().or(z.literal("")),
         educationBackground: z.string().optional(),
         coverLetter: z.string().min(10),
         resumeUrl: z.string().optional(),

@@ -25,7 +25,7 @@ export const memberRouter = router({
     .input(
       z.object({
         name: z.string().optional(),
-        phone: z.string().optional(),
+        phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional().or(z.literal("")),
         bio: z.string().optional(),
         fatherName: z.string().optional(),
         dob: z.date().optional().or(z.string().transform(str => new Date(str)).optional()),

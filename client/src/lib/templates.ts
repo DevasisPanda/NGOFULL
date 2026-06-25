@@ -42,8 +42,8 @@ export const ACHIEVEMENT_TEMPLATE: TemplateConfig = {
   id: "achievement",
   name: "Achievement Certificate",
   src: "https://res.cloudinary.com/dxmovdiru/image/upload/v1781611663/ngo-management/templates/achievement_certificate_template.jpg",
-  imgWidth: 904,
-  imgHeight: 1354,
+  imgWidth: 1280,
+  imgHeight: 954,
   fields: [
     { id: "fullName", label: "Recipient Name", text: "", x: 330, y: 600, size: 36, color: "#1f2937", weight: "bold", align: "center" },
     { id: "description", label: "Description", text: "", x: 630, y: 690, size: 26, color: "#4b5563", weight: "normal", align: "center" },
@@ -71,8 +71,8 @@ export const ID_CARD_TEMPLATE: TemplateConfig = {
   id: "id_card",
   name: "ID Card",
   src: "https://res.cloudinary.com/dxmovdiru/image/upload/v1781611667/ngo-management/templates/generate_id_template.jpg",
-  imgWidth: 1280,
-  imgHeight: 960,
+  imgWidth: 1599,
+  imgHeight: 1067,
   fields: [
     { id: "fullName", label: "Name", text: "", x: 392, y: 655, size: 32, color: "#ef4444", weight: "bold", align: "center" },
     { id: "designation", label: "Designation", text: "", x: 416, y: 380, size: 22, color: "#0f766e", weight: "bold", align: "center" },
@@ -89,8 +89,8 @@ export const DONATION_RECEIPT_TEMPLATE: TemplateConfig = {
   id: "donation",
   name: "Donation Receipt",
   src: "https://res.cloudinary.com/dxmovdiru/image/upload/v1781611665/ngo-management/templates/donation_receipt_template.jpg",
-  imgWidth: 800,
-  imgHeight: 900,
+  imgWidth: 905,
+  imgHeight: 1280,
   fields: [
     { id: "receiptNumber", label: "Receipt No.", text: "", x: 208, y: 224, size: 18, color: "#1e293b", weight: "bold", align: "left" },
     { id: "date", label: "Date", text: "", x: 706, y: 224, size: 18, color: "#1e293b", weight: "bold", align: "right" },
@@ -110,4 +110,29 @@ export const ALL_TEMPLATES: TemplateConfig[] = [
 
 export function getTemplate(id: string): TemplateConfig | undefined {
   return ALL_TEMPLATES.find((t) => t.id === id);
+}
+
+export function mergeTemplates(dbTemplates: any[] | undefined): TemplateConfig[] {
+  if (!dbTemplates) return ALL_TEMPLATES;
+  return ALL_TEMPLATES.map(staticTpl => {
+    const dbTpl = dbTemplates.find(t => t.type === staticTpl.id);
+    if (!dbTpl) return staticTpl;
+    
+    let fields = staticTpl.fields;
+    try {
+      if (typeof dbTpl.designJson === 'string') {
+        fields = JSON.parse(dbTpl.designJson);
+      } else if (dbTpl.designJson && typeof dbTpl.designJson === 'object') {
+        fields = dbTpl.designJson as any;
+      }
+    } catch (e) {
+      console.error("Failed to parse designJson for template", dbTpl.type, e);
+    }
+    
+    return {
+      ...staticTpl,
+      src: dbTpl.templateImage || staticTpl.src,
+      fields
+    };
+  });
 }

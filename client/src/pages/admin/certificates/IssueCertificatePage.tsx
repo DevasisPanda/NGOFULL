@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CaptureActions } from "@/components/CaptureActions";
-import { APPOINTMENT_TEMPLATE, ACHIEVEMENT_TEMPLATE, MEMBERSHIP_TEMPLATE, type TemplateConfig } from "@/lib/templates";
+import { mergeTemplates, type TemplateConfig } from "@/lib/templates";
+import { VerifiableDocument } from "@/components/VerifiableDocument";
 import { format } from "date-fns";
 import { Award, FileText, Calendar, Eye } from "lucide-react";
 
@@ -36,11 +37,16 @@ export default function IssueCertificatePage() {
 
   const utils = trpc.useUtils();
   const { data: usersData, isLoading: usersLoading } = trpc.admin.getAllUsers.useQuery({ page: 1, pageSize: 1000 });
+  const { data: dbTemplates } = trpc.document.getTemplateConfigs.useQuery();
+
+  const mergedTemplates = mergeTemplates(dbTemplates);
 
   const generateMutation = trpc.document.generateCertificate.useMutation({
     onSuccess: (data: any) => {
       toast.success("Certificate issued successfully!");
-      const tpl = formData.certificateType === "achievement" ? ACHIEVEMENT_TEMPLATE : MEMBERSHIP_TEMPLATE;
+      const tpl = formData.certificateType === "achievement" 
+        ? mergedTemplates.find(t => t.id === "achievement")! 
+        : mergedTemplates.find(t => t.id === "membership")!;
       const user = usersData?.items?.find(u => u.id.toString() === formData.recipientId);
       setPreview({
         template: tpl,
@@ -63,8 +69,9 @@ export default function IssueCertificatePage() {
     onSuccess: (data) => {
       toast.success(`Appointment letter generated! Ref: ${data.letterNumber}`);
       const user = usersData?.items?.find(u => u.id.toString() === formData.recipientId);
+      const tpl = mergedTemplates.find(t => t.id === "appointment")!;
       setPreview({
-        template: APPOINTMENT_TEMPLATE,
+        template: tpl,
         fieldValues: {
           letterNumber: data.letterNumber || `APPT_${Date.now()}`,
           name1: user?.name || "",
@@ -250,31 +257,13 @@ Details about the role..." value={formData.position} onChange={(e) => setFormDat
 
           {preview && (
             <div className="py-4">
-              <div ref={previewRef} className="relative w-full max-w-lg mx-auto overflow-hidden rounded-lg border border-gray-200 shadow-md">
-                <img src={preview.template.src} alt="Template" className="w-full h-auto" crossOrigin="anonymous" />
-                {preview.template.fields.map((field) => {
-                  const val = preview.fieldValues[field.id];
-                  if (!val) return null;
-                  const style: React.CSSProperties = {
-                    position: "absolute",
-                    left: `${(field.x / preview.template.imgWidth) * 100}%`,
-                    top: `${(field.y / preview.template.imgHeight) * 100}%`,
-                    fontSize: `${field.size}px`,
-                    color: field.color,
-                    fontWeight: field.weight,
-                    textAlign: field.align,
-                    transform: field.align === "center" ? "translateX(-50%)" : field.align === "right" ? "translateX(-100%)" : undefined,
-                    whiteSpace: "nowrap",
-                    lineHeight: 1.2,
-                    pointerEvents: "none",
-                  };
-                  return (
-                    <span key={field.id} style={style}>
-                      {val}
-                    </span>
-                  );
-                })}
-              </div>
+              <VerifiableDocument
+                templateId={preview.template.id}
+                fieldValues={preview.fieldValues}
+                dbTemplates={dbTemplates}
+                cardRef={previewRef}
+                className="max-w-lg mx-auto rounded-lg"
+              />
             </div>
           )}
 

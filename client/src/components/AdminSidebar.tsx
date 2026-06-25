@@ -117,8 +117,7 @@ export default function AdminSidebar({ isOpen, onClose }: { isOpen?: boolean; on
     localStorage.removeItem("userRole");
     localStorage.removeItem("userName");
     
-    const frontendUrl = configQuery.data?.frontendUrl || "http://localhost:5173";
-    window.location.href = `${frontendUrl}/?logout=true`;
+    window.location.href = `${configQuery.data?.frontendUrl || "/"}?logout=true`;
   };
 
   const renderMenuItems = (items: MenuItem[], level = 0) => {

@@ -6,11 +6,13 @@ import { format } from "date-fns";
 import { Filter, Trash2, Edit, Eye, FileText, ChevronsUpDown, ChevronLeft, ChevronRight, Award, QrCode } from "lucide-react";
 import { CaptureActions } from "@/components/CaptureActions";
 import { Button } from "@/components/ui/button";
+import { VerifiableDocument } from "@/components/VerifiableDocument";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 export default function ActiveCertificatesPage() {
   const { data: certificates, isLoading } = trpc.document.getCertificates.useQuery();
+  const { data: dbTemplates } = trpc.document.getTemplateConfigs.useQuery();
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -245,75 +247,27 @@ export default function ActiveCertificatesPage() {
 
           <div className="py-4 flex justify-center">
             {selectedPreviewCert && (
-              selectedPreviewCert.certificateType === 'achievement' ? (
-                /* Achievement Template (Landscape) */
-                <div ref={previewRef} className="relative w-full max-w-xl aspect-[1.414/1] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
-                  <img 
-                    src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611663/ngo-management/templates/achievement_certificate_template.jpg" 
-                    alt="Achievement Certificate Template" 
-                    className="w-full h-full object-cover" 
-                  />
-                  
-                  {/* Name Overlay */}
-                  <div className="absolute top-[48%] left-0 right-0 text-center px-8">
-                    <span className="font-serif text-[15px] sm:text-[20px] text-slate-800 font-bold tracking-wide italic inline-block">
-                      {selectedPreviewCert.recipientName || "Registered Recipient"}
-                    </span>
-                  </div>
-
-                  {/* Description Overlay */}
-                  <div className="absolute top-[61%] left-[10%] right-[10%] text-center text-slate-600 text-[8px] sm:text-[11px] leading-relaxed">
-                    {selectedPreviewCert.description || `This certificate is officially presented to acknowledge their dedication and valuable service as a registered achievement recipient of the Valmiki Samaj Charitable Trust.`}
-                  </div>
-
-                  {/* Issue Date Overlay */}
-                  <div className="absolute bottom-[13%] left-[17%] text-[7px] sm:text-[9.5px] text-slate-600 font-medium font-mono">
-                    {selectedPreviewCert.issueDate ? format(new Date(selectedPreviewCert.issueDate), "dd/MM/yyyy") : ""}
-                  </div>
-
-                  {/* Certificate Number Overlay */}
-                  <div className="absolute bottom-[13%] right-[17%] text-[7px] sm:text-[9.5px] text-slate-600 font-medium font-mono">
-                    {selectedPreviewCert.certificateNumber}
-                  </div>
-                </div>
-              ) : (
-                /* Membership/Volunteer/Other Templates (Portrait) */
-                <div ref={previewRef} className="relative w-full max-w-md aspect-[904/1354] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
-                  <img 
-                    src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611666/ngo-management/templates/membership_certificate_template.jpg" 
-                    alt="Membership Certificate Template" 
-                    className="w-full h-full object-cover" 
-                  />
-                  
-                  {/* Name Overlay */}
-                  <div className="absolute left-0 right-0 text-center px-8" style={{ top: '39.14%' }}>
-                    <span className="font-serif text-[15px] sm:text-[20px] text-slate-800 font-bold tracking-wide italic inline-block">
-                      {selectedPreviewCert.recipientName || "Registered Recipient"}
-                    </span>
-                  </div>
-
-                  {/* Membership Number */}
-                  <div className="absolute text-center" style={{ top: '54.65%', left: '17.7%', transform: 'translateX(-50%)', width: '30%' }}>
-                    <span className="font-sans text-[9px] sm:text-[12px] text-slate-800 font-bold">
-                      {selectedPreviewCert.certificateNumber}
-                    </span>
-                  </div>
-
-                  {/* Issue Date */}
-                  <div className="absolute text-center" style={{ top: '54.65%', left: '51.44%', transform: 'translateX(-50%)', width: '30%' }}>
-                    <span className="font-sans text-[9px] sm:text-[12px] text-slate-800 font-bold">
-                      {selectedPreviewCert.issueDate ? format(new Date(selectedPreviewCert.issueDate), "dd/MM/yyyy") : ""}
-                    </span>
-                  </div>
-
-                  {/* Expiry Date */}
-                  <div className="absolute text-center" style={{ top: '54.65%', left: '82.41%', transform: 'translateX(-50%)', width: '30%' }}>
-                    <span className="font-sans text-[9px] sm:text-[12px] text-slate-800 font-bold">
-                      {selectedPreviewCert.expiryDate ? format(new Date(selectedPreviewCert.expiryDate), "dd/MM/yyyy") : "Lifetime"}
-                    </span>
-                  </div>
-                </div>
-              )
+              <VerifiableDocument
+                templateId={selectedPreviewCert.certificateType}
+                fieldValues={
+                  selectedPreviewCert.certificateType === 'achievement'
+                    ? {
+                        fullName: selectedPreviewCert.recipientName || "Registered Recipient",
+                        description: selectedPreviewCert.description || "",
+                        issueDate: selectedPreviewCert.issueDate ? format(new Date(selectedPreviewCert.issueDate), "dd/MM/yyyy") : "",
+                        certificateNumber: selectedPreviewCert.certificateNumber,
+                      }
+                    : {
+                        fullName: selectedPreviewCert.recipientName || "Registered Recipient",
+                        membershipNumber: selectedPreviewCert.certificateNumber,
+                        joinDate: selectedPreviewCert.issueDate ? format(new Date(selectedPreviewCert.issueDate), "dd/MM/yyyy") : "",
+                        expiryDate: selectedPreviewCert.expiryDate ? format(new Date(selectedPreviewCert.expiryDate), "dd/MM/yyyy") : "Lifetime",
+                      }
+                }
+                dbTemplates={dbTemplates}
+                cardRef={previewRef}
+                className="max-w-lg mx-auto rounded-lg"
+              />
             )}
           </div>
 

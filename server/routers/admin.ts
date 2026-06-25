@@ -16,7 +16,7 @@ export const adminRouter = router({
       z.object({
         name: z.string().min(1, "Name is required"),
         email: z.string().email(),
-        phone: z.string().optional(),
+        phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional().or(z.literal("")),
         password: z.string().min(6, "Password must be at least 6 characters"),
         membershipType: z.enum(["regular", "lifetime"]),
         profileImage: z.string().optional(),
@@ -176,7 +176,7 @@ export const adminRouter = router({
         userId: z.number(),
         name: z.string().optional(),
         email: z.string().email().optional(),
-        phone: z.string().optional(),
+        phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional().or(z.literal("")).nullable(),
         role: z.enum(["user", "admin", "staff", "volunteer"]).optional(),
         status: z.enum(["active", "inactive", "blocked", "pending"]).optional(),
         fatherName: z.string().optional().nullable(),

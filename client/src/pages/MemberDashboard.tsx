@@ -9,6 +9,7 @@ import { Heart, LogOut, User, Mail, Phone, FileText, CreditCard, Award, Calendar
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { VerifiableDocument } from "@/components/VerifiableDocument";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -44,6 +45,7 @@ export default function MemberDashboard() {
   const { data: myDonations, isLoading: isDonationsLoading } = trpc.donation.getMyDonations.useQuery({ page: 1, pageSize: 100 }, { enabled: isHistoryModalOpen || isDonationModalOpen });
   const { data: myCertificates, isLoading: isCertificatesLoading } = trpc.document.getMyCertificates.useQuery(undefined, { enabled: isCertificatesModalOpen });
   const { data: myIDCard, isLoading: isIDCardLoading } = trpc.document.getMyIDCard.useQuery(undefined, { enabled: isIDCardModalOpen });
+  const { data: dbTemplates } = trpc.document.getTemplateConfigs.useQuery();
 
   // Mutation
   const createDonationMutation = trpc.donation.create.useMutation({
@@ -128,8 +130,7 @@ export default function MemberDashboard() {
     localStorage.removeItem("authToken");
     localStorage.removeItem("userRole");
     
-    const frontendUrl = configQuery.data?.frontendUrl || "http://localhost:5173";
-    window.location.href = `${frontendUrl}/?logout=true`;
+    window.location.href = `${configQuery.data?.frontendUrl || "/"}?logout=true`;
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -640,42 +641,32 @@ export default function MemberDashboard() {
                 </p>
               </div>
             ) : (
-              <div className="relative w-[280px] h-[420px] rounded-2xl overflow-hidden border border-gray-200 shadow-md bg-teal-50 flex flex-col items-center">
-                {/* Background Template */}
-                <img src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611667/ngo-management/templates/generate_id_template.jpg" alt="ID Card Template" className="w-full h-full object-cover" />
-                
+              <VerifiableDocument
+                templateId="id_card"
+                fieldValues={{
+                  fullName: profile?.name || "",
+                  designation: profile?.designation || "Trust Member",
+                  cardNumber: myIDCard.cardNumber,
+                  mobile: profile?.phone || "N/A",
+                  email: profile?.email || "N/A",
+                  city: profile?.city || "N/A",
+                  issueDate: myIDCard.issueDate ? new Date(myIDCard.issueDate).toLocaleDateString() : "",
+                  expiryDate: myIDCard.expiryDate ? new Date(myIDCard.expiryDate).toLocaleDateString() : "Lifetime",
+                }}
+                dbTemplates={dbTemplates}
+                className="max-w-[280px] mx-auto rounded-2xl"
+              >
                 {/* Profile Photo Overlay */}
-                <div className="absolute top-[110px] left-1/2 -translate-x-1/2 w-[90px] h-[90px] rounded-full overflow-hidden border-2 border-white shadow bg-white">
+                <div className="absolute top-[26.2%] left-[50%] -translate-x-1/2 w-[32.1%] aspect-[1/1] rounded-full overflow-hidden border-2 border-white shadow bg-white">
                   {profile?.profileImage ? (
                     <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-teal-800 text-2xl font-bold bg-teal-100">
+                    <div className="w-full h-full flex items-center justify-center text-teal-800 text-[6cqw] font-bold bg-teal-100">
                       {profile?.name?.slice(0, 2).toUpperCase() || 'MB'}
                     </div>
                   )}
                 </div>
-
-                {/* Name & Designation */}
-                <div className="absolute top-[220px] left-0 right-0 text-center px-4">
-                  <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wide line-clamp-1">{profile?.name}</h4>
-                  <p className="text-[10px] font-bold text-teal-700 uppercase tracking-wider mt-0.5 line-clamp-1">{profile?.designation || 'Trust Member'}</p>
-                </div>
-
-                {/* Details list */}
-                <div className="absolute top-[275px] left-4 right-4 text-[8px] text-slate-700 font-semibold space-y-1 bg-white/85 p-2.5 rounded-lg border border-teal-100">
-                  <div className="flex justify-between border-b border-slate-100/50 pb-0.5"><span className="text-slate-400">Card No:</span><span className="font-mono text-slate-900">{myIDCard.cardNumber}</span></div>
-                  <div className="flex justify-between border-b border-slate-100/50 pb-0.5"><span className="text-slate-400">Reg No:</span><span className="font-mono text-slate-900">{profile?.membershipNumber || 'MBR-000001'}</span></div>
-                  <div className="flex justify-between border-b border-slate-100/50 pb-0.5"><span className="text-slate-400">Issue Date:</span><span>{myIDCard.issueDate ? new Date(myIDCard.issueDate).toLocaleDateString() : ""}</span></div>
-                  <div className="flex justify-between"><span className="text-slate-400">Valid Till:</span><span>{myIDCard.expiryDate ? new Date(myIDCard.expiryDate).toLocaleDateString() : "Lifetime"}</span></div>
-                </div>
-
-                {/* QR Indicator */}
-                <div className="absolute bottom-[18px] left-1/2 -translate-x-1/2 flex flex-col items-center">
-                  <div className="w-10 h-10 bg-white p-0.5 border border-teal-200 rounded flex items-center justify-center">
-                    <QrCode className="w-8 h-8 text-teal-800 opacity-60" />
-                  </div>
-                </div>
-              </div>
+              </VerifiableDocument>
             )}
           </div>
 
@@ -700,115 +691,52 @@ export default function MemberDashboard() {
           <div className="py-4 flex justify-center">
             {selectedPreviewCert && (
               selectedPreviewCert.certificateType === 'visitor' ? (
-                <div className="relative w-[280px] h-[420px] rounded-2xl overflow-hidden border border-gray-200 shadow-md bg-teal-50 flex flex-col items-center">
-                  <img 
-                    src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611667/ngo-management/templates/generate_id_template.jpg" 
-                    alt="Visitor Pass Template" 
-                    className="w-full h-full object-cover" 
-                  />
-                  
-                  {/* Profile Photo Overlay */}
-                  <div className="absolute top-[110px] left-1/2 -translate-x-1/2 w-[90px] h-[90px] rounded-full overflow-hidden border-2 border-white shadow bg-white">
+                <VerifiableDocument
+                  templateId="id_card"
+                  fieldValues={{
+                    fullName: profile?.name || "",
+                    designation: "TEMPORARY VISITOR",
+                    cardNumber: selectedPreviewCert.certificateNumber,
+                    mobile: profile?.phone || "N/A",
+                    email: profile?.email || "N/A",
+                    city: profile?.city || "N/A",
+                    issueDate: selectedPreviewCert.issueDate ? new Date(selectedPreviewCert.issueDate).toLocaleDateString() : "",
+                    expiryDate: selectedPreviewCert.expiryDate ? new Date(selectedPreviewCert.expiryDate).toLocaleDateString() : "Same Day",
+                  }}
+                  dbTemplates={dbTemplates}
+                  className="max-w-[280px] mx-auto rounded-2xl"
+                >
+                  <div className="absolute top-[26.2%] left-[50%] -translate-x-1/2 w-[32.1%] aspect-[1/1] rounded-full overflow-hidden border-2 border-white shadow bg-white">
                     {profile?.profileImage ? (
                       <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-teal-800 text-2xl font-bold bg-teal-100">
+                      <div className="w-full h-full flex items-center justify-center text-teal-800 text-[6cqw] font-bold bg-teal-100">
                         {profile?.name?.slice(0, 2).toUpperCase() || 'MB'}
                       </div>
                     )}
                   </div>
-
-                  {/* Name & Designation */}
-                  <div className="absolute top-[220px] left-0 right-0 text-center px-4">
-                    <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wide line-clamp-1">{profile?.name}</h4>
-                    <p className="text-[10px] font-bold text-teal-700 uppercase tracking-wider mt-0.5 line-clamp-1">TEMPORARY VISITOR</p>
-                  </div>
-
-                  {/* Details list */}
-                  <div className="absolute top-[275px] left-4 right-4 text-[8px] text-slate-700 font-semibold space-y-1 bg-white/85 p-2.5 rounded-lg border border-teal-100">
-                    <div className="flex justify-between border-b border-slate-100/50 pb-0.5"><span className="text-slate-400">Pass No:</span><span className="font-mono text-slate-900">{selectedPreviewCert.certificateNumber}</span></div>
-                    <div className="flex justify-between border-b border-slate-100/50 pb-0.5"><span className="text-slate-400">Purpose:</span><span className="text-slate-900 line-clamp-1">{selectedPreviewCert.title || 'Official Visit'}</span></div>
-                    <div className="flex justify-between border-b border-slate-100/50 pb-0.5"><span className="text-slate-400">Issue Date:</span><span>{selectedPreviewCert.issueDate ? new Date(selectedPreviewCert.issueDate).toLocaleDateString() : ""}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-400">Valid Till:</span><span>{selectedPreviewCert.expiryDate ? new Date(selectedPreviewCert.expiryDate).toLocaleDateString() : "Same Day"}</span></div>
-                  </div>
-
-                  {/* QR Indicator */}
-                  <div className="absolute bottom-[18px] left-1/2 -translate-x-1/2 flex flex-col items-center">
-                    <div className="w-10 h-10 bg-white p-0.5 border border-teal-200 rounded flex items-center justify-center">
-                      <QrCode className="w-8 h-8 text-teal-800 opacity-60" />
-                    </div>
-                  </div>
-                </div>
+                </VerifiableDocument>
               ) : (
-                selectedPreviewCert.certificateType === 'achievement' ? (
-                  /* Achievement Template (Landscape) */
-                  <div className="relative w-full aspect-[1.414/1] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50">
-                    <img 
-                      src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611663/ngo-management/templates/achievement_certificate_template.jpg" 
-                      alt="Achievement Certificate" 
-                      className="w-full h-full object-cover" 
-                    />
-                    
-                    {/* Name Overlay */}
-                    <div className="absolute top-[48%] left-0 right-0 text-center px-8">
-                      <span className="font-serif text-[18px] sm:text-[24px] md:text-[28px] text-slate-800 font-bold tracking-wide italic inline-block">
-                        {profile?.name}
-                      </span>
-                    </div>
-
-                    {/* Description Overlay */}
-                    <div className="absolute top-[61%] left-1/2 -translate-x-1/2 w-[80%] text-center text-slate-600 text-[8px] sm:text-[11px] md:text-[13px] leading-relaxed max-w-lg">
-                      {selectedPreviewCert.description || `This certificate is officially presented to acknowledge their dedication and valuable service as a registered ${selectedPreviewCert.certificateType} of the Valmiki Samaj Charitable Trust.`}
-                    </div>
-
-                    {/* Issue Date Overlay */}
-                    <div className="absolute bottom-[13%] left-[17%] text-[7px] sm:text-[9px] md:text-[11px] text-slate-600 font-medium font-mono">
-                      {selectedPreviewCert.issueDate ? new Date(selectedPreviewCert.issueDate).toLocaleDateString() : ""}
-                    </div>
-
-                    {/* Certificate Number Overlay */}
-                    <div className="absolute bottom-[13%] right-[17%] text-[7px] sm:text-[9px] md:text-[11px] text-slate-600 font-medium font-mono">
-                      {selectedPreviewCert.certificateNumber}
-                    </div>
-                  </div>
-                ) : (
-                  /* Membership/Volunteer/Other Templates (Portrait) */
-                  <div className="relative w-full max-w-md aspect-[904/1354] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
-                    <img 
-                      src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611666/ngo-management/templates/membership_certificate_template.jpg" 
-                      alt="Membership Certificate Template" 
-                      className="w-full h-full object-cover" 
-                    />
-                    
-                    {/* Name Overlay */}
-                    <div className="absolute left-0 right-0 text-center px-8" style={{ top: '39.14%' }}>
-                      <span className="font-serif text-[15px] sm:text-[20px] text-slate-800 font-bold tracking-wide italic inline-block">
-                        {profile?.name}
-                      </span>
-                    </div>
-
-                    {/* Membership Number */}
-                    <div className="absolute text-center" style={{ top: '54.65%', left: '17.7%', transform: 'translateX(-50%)', width: '30%' }}>
-                      <span className="font-sans text-[9px] sm:text-[12px] text-slate-800 font-bold">
-                        {selectedPreviewCert.certificateNumber}
-                      </span>
-                    </div>
-
-                    {/* Issue Date */}
-                    <div className="absolute text-center" style={{ top: '54.65%', left: '51.44%', transform: 'translateX(-50%)', width: '30%' }}>
-                      <span className="font-sans text-[9px] sm:text-[12px] text-slate-800 font-bold">
-                        {selectedPreviewCert.issueDate ? new Date(selectedPreviewCert.issueDate).toLocaleDateString() : ""}
-                      </span>
-                    </div>
-
-                    {/* Expiry Date */}
-                    <div className="absolute text-center" style={{ top: '54.65%', left: '82.41%', transform: 'translateX(-50%)', width: '30%' }}>
-                      <span className="font-sans text-[9px] sm:text-[12px] text-slate-800 font-bold">
-                        {selectedPreviewCert.expiryDate ? new Date(selectedPreviewCert.expiryDate).toLocaleDateString() : "Lifetime"}
-                      </span>
-                    </div>
-                  </div>
-                )
+                <VerifiableDocument
+                  templateId={selectedPreviewCert.certificateType}
+                  fieldValues={
+                    selectedPreviewCert.certificateType === 'achievement'
+                      ? {
+                          fullName: profile?.name || "",
+                          description: selectedPreviewCert.description || "",
+                          issueDate: selectedPreviewCert.issueDate ? new Date(selectedPreviewCert.issueDate).toLocaleDateString() : "",
+                          certificateNumber: selectedPreviewCert.certificateNumber,
+                        }
+                      : {
+                          fullName: profile?.name || "",
+                          membershipNumber: selectedPreviewCert.certificateNumber,
+                          joinDate: selectedPreviewCert.issueDate ? new Date(selectedPreviewCert.issueDate).toLocaleDateString() : "",
+                          expiryDate: selectedPreviewCert.expiryDate ? new Date(selectedPreviewCert.expiryDate).toLocaleDateString() : "Lifetime",
+                        }
+                  }
+                  dbTemplates={dbTemplates}
+                  className="max-w-lg mx-auto rounded-lg"
+                />
               )
             )}
           </div>
@@ -836,46 +764,18 @@ export default function MemberDashboard() {
 
           <div className="py-4 flex justify-center">
             {selectedReceiptDonation && (
-              <div className="relative w-[320px] h-[452px] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
-                <img 
-                  src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611665/ngo-management/templates/donation_receipt_template.jpg" 
-                  alt="Donation Receipt Template" 
-                  className="w-full h-full object-cover" 
-                />
-                
-                {/* Overlays */}
-                {/* Receipt Number */}
-                <div className="absolute top-[17.5%] left-[23%] font-mono text-[9px] font-bold text-slate-800">
-                  {selectedReceiptDonation.receiptNumber}
-                </div>
-
-                {/* Date */}
-                <div className="absolute top-[17.5%] right-[22%] font-mono text-[9px] font-bold text-slate-800">
-                  {selectedReceiptDonation.createdAt ? new Date(selectedReceiptDonation.createdAt).toLocaleDateString() : ""}
-                </div>
-
-                {/* Donor Name */}
-                <div className="absolute top-[30%] left-[24%] text-[10.5px] font-bold text-slate-800">
-                  {profile?.name}
-                </div>
-
-                {/* Amount */}
-                <div className="absolute top-[44%] left-[24%] text-[11px] font-extrabold text-teal-800">
-                  ₹{parseFloat(selectedReceiptDonation.amount as string || "0").toFixed(2)}
-                </div>
-
-                {/* Purpose */}
-                <div className="absolute top-[56.5%] left-[24%] text-[10px] text-slate-700 font-bold max-w-[65%] line-clamp-1">
-                  {selectedReceiptDonation.purpose || "General NGO Fund"}
-                </div>
-
-                {/* QR Code Indicator */}
-                <div className="absolute bottom-[8%] right-[10%]">
-                  <div className="w-10 h-10 bg-white p-0.5 border rounded flex items-center justify-center">
-                    <QrCode className="w-8 h-8 text-orange-600 opacity-65" />
-                  </div>
-                </div>
-              </div>
+              <VerifiableDocument
+                templateId="donation"
+                fieldValues={{
+                  receiptNumber: selectedReceiptDonation.receiptNumber,
+                  date: selectedReceiptDonation.createdAt ? new Date(selectedReceiptDonation.createdAt).toLocaleDateString() : "",
+                  donorName: profile?.name || "",
+                  amount: `₹${parseFloat(selectedReceiptDonation.amount as string || "0").toFixed(2)}`,
+                  purpose: selectedReceiptDonation.purpose || "General NGO Fund"
+                }}
+                dbTemplates={dbTemplates}
+                className="max-w-[320px] mx-auto rounded-xl"
+              />
             )}
           </div>
 

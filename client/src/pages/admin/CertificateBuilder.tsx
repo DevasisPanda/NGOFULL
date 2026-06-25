@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { trpc } from '@/lib/trpc';
+import { toast } from 'sonner';
 
 // Types and Defaults
 type FieldConfig = {
@@ -92,6 +94,68 @@ export default function CertificateBuilder() {
   const [activeTemplateId, setActiveTemplateId] = useState<string>('membership');
   
   const activeTemplate = templates.find(t => t.id === activeTemplateId);
+
+  // Load and merge templates from DB
+  const utils = trpc.useUtils();
+  const { data: dbTemplates } = trpc.document.getTemplateConfigs.useQuery();
+  
+  useEffect(() => {
+    if (dbTemplates) {
+      setTemplates(prev => prev.map(staticTpl => {
+        const dbTpl = dbTemplates.find(t => t.type === staticTpl.id);
+        if (!dbTpl) return staticTpl;
+        
+        let fields = staticTpl.fields;
+        try {
+          if (typeof dbTpl.designJson === 'string') {
+            fields = JSON.parse(dbTpl.designJson);
+          } else if (dbTpl.designJson && typeof dbTpl.designJson === 'object') {
+            fields = dbTpl.designJson as any;
+          }
+        } catch (e) {
+          console.error("Failed to parse designJson for template", dbTpl.type, e);
+        }
+        
+        return {
+          ...staticTpl,
+          src: dbTpl.templateImage || staticTpl.src,
+          fields: staticTpl.fields.map(f => {
+            const dbField = fields.find(df => df.id === f.id);
+            return dbField ? { ...f, ...dbField } : f;
+          })
+        };
+      }));
+    }
+  }, [dbTemplates]);
+
+  const saveMutation = trpc.document.saveTemplateConfig.useMutation({
+    onSuccess: (res) => {
+      toast.success(res.message);
+      utils.document.getTemplateConfigs.invalidate();
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to save configuration");
+    }
+  });
+
+  const saveConfigToDb = () => {
+    if (!activeTemplate) return;
+    saveMutation.mutate({
+      type: activeTemplate.id,
+      name: activeTemplate.name,
+      templateImage: activeTemplate.src,
+      designJson: activeTemplate.fields.map(f => ({
+        id: f.id,
+        label: f.label,
+        x: f.x,
+        y: f.y,
+        size: f.size,
+        color: f.color,
+        weight: f.weight,
+        align: f.align
+      }))
+    });
+  };
 
   // Redraw canvas whenever template or fields change
   useEffect(() => {
@@ -292,6 +356,15 @@ export default function CertificateBuilder() {
           >
             <span className="material-symbols-outlined">content_copy</span>
             Copy Final Configuration
+          </button>
+
+          <button 
+            onClick={saveConfigToDb}
+            disabled={saveMutation.isPending}
+            className="w-full mt-4 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-blue-400"
+          >
+            <span className="material-symbols-outlined">save</span>
+            {saveMutation.isPending ? 'Saving...' : 'Apply Layout for Everyone'}
           </button>
         </div>
       </div>

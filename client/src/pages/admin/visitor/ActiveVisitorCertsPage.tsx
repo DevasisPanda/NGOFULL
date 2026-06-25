@@ -6,6 +6,7 @@ import { format, isBefore } from "date-fns";
 import { Filter, Trash2, Edit, Eye, FileText, ChevronsUpDown, ChevronLeft, ChevronRight, UserCheck, QrCode } from "lucide-react";
 import { CaptureActions } from "@/components/CaptureActions";
 import { Button } from "@/components/ui/button";
+import { VerifiableDocument } from "@/components/VerifiableDocument";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
@@ -13,6 +14,7 @@ export default function ActiveVisitorCertsPage() {
   const { data: certificates, isLoading } = trpc.document.getCertificates.useQuery({
     certificateType: "visitor"
   });
+  const { data: dbTemplates } = trpc.document.getTemplateConfigs.useQuery();
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -255,57 +257,27 @@ export default function ActiveVisitorCertsPage() {
 
           <div className="py-4 flex justify-center">
             {selectedPreviewCert && (
-              <div ref={visitorRef} className="relative w-full max-w-xl aspect-[1.5/1] rounded-2xl overflow-hidden border border-gray-200 shadow-md bg-teal-50">
-                <img 
-                  src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611667/ngo-management/templates/generate_id_template.jpg" 
-                  alt="Visitor Pass Template" 
-                  className="w-full h-full object-cover" 
-                  crossOrigin="anonymous"
-                />
-                
+              <VerifiableDocument
+                templateId="id_card"
+                fieldValues={{
+                  fullName: selectedPreviewCert.title || "",
+                  designation: "TEMPORARY VISITOR",
+                  cardNumber: selectedPreviewCert.certificateNumber,
+                  mobile: "N/A",
+                  email: selectedPreviewCert.description || "Official Visit",
+                  city: "N/A",
+                  issueDate: selectedPreviewCert.issueDate ? format(new Date(selectedPreviewCert.issueDate), "dd-MM-yyyy") : "",
+                  expiryDate: selectedPreviewCert.expiryDate ? format(new Date(selectedPreviewCert.expiryDate), "dd-MM-yyyy") : "Same Day",
+                }}
+                dbTemplates={dbTemplates}
+                cardRef={visitorRef}
+                className="max-w-lg mx-auto rounded-lg"
+              >
                 {/* Photo Overlay Placeholder */}
                 <div className="absolute top-[41.5%] left-[23%] -translate-x-1/2 w-[16%] aspect-[1/1] rounded-xl overflow-hidden shadow-sm bg-white border border-gray-100 flex items-center justify-center">
-                  <UserCheck className="w-8 h-8 text-teal-800 opacity-60" />
+                  <UserCheck className="w-[8cqw] h-[8cqw] text-teal-800 opacity-60" />
                 </div>
-
-                {/* Name & Designation Overlay */}
-                <div className="absolute top-[32%] left-[4.5%] w-[40%] text-center">
-                  <h4 className="font-extrabold text-[9px] sm:text-[13px] text-red-600 uppercase tracking-wide line-clamp-1">{selectedPreviewCert.title}</h4>
-                  <p className="text-[7px] sm:text-[9.5px] font-bold text-teal-700 uppercase tracking-wider mt-0.5 line-clamp-1">TEMPORARY VISITOR</p>
-                </div>
-
-                {/* Left Side Details */}
-                {/* Pass No */}
-                <div className="absolute top-[62.5%] left-[28%] text-[8px] sm:text-[12px] font-bold text-slate-800">
-                  {selectedPreviewCert.certificateNumber}
-                </div>
-
-                {/* Mobile No */}
-                <div className="absolute top-[67%] left-[17%] text-[8px] sm:text-[12px] font-bold text-slate-800">
-                  N/A
-                </div>
-
-                {/* Email/Purpose (displaying visitor purpose here) */}
-                <div className="absolute top-[71%] left-[17%] text-[7px] sm:text-[10px] font-bold text-slate-800 line-clamp-1 w-[35%]">
-                  {selectedPreviewCert.description || "Official Visit"}
-                </div>
-
-                {/* City */}
-                <div className="absolute top-[75%] left-[13%] text-[8px] sm:text-[12px] font-bold text-slate-800">
-                  N/A
-                </div>
-
-                {/* Right Side Details */}
-                {/* Joining/Issue Date */}
-                <div className="absolute top-[79.5%] left-[78%] text-[8px] sm:text-[12px] font-bold text-[#0f2454]">
-                  {selectedPreviewCert.issueDate ? format(new Date(selectedPreviewCert.issueDate), "dd-MM-yyyy") : ""}
-                </div>
-
-                {/* Validity/Expiry Date */}
-                <div className="absolute top-[84%] left-[78%] text-[8px] sm:text-[12px] font-bold text-[#0f2454]">
-                  {selectedPreviewCert.expiryDate ? format(new Date(selectedPreviewCert.expiryDate), "dd-MM-yyyy") : "Same Day"}
-                </div>
-              </div>
+              </VerifiableDocument>
             )}
           </div>
 

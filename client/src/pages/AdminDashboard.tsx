@@ -41,8 +41,7 @@ export default function AdminDashboard() {
     localStorage.removeItem("authToken");
     localStorage.removeItem("userRole");
     
-    const frontendUrl = configQuery.data?.frontendUrl || "http://localhost:5173";
-    window.location.href = `${frontendUrl}/?logout=true`;
+    window.location.href = `${configQuery.data?.frontendUrl || "/"}?logout=true`;
   };
 
   const handleApprove = async (userId: number) => {

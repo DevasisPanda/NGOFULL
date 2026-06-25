@@ -59,7 +59,7 @@ export const beneficiaryRouter = router({
       z.object({
         name: z.string().min(2, "Name is required"),
         email: z.string().email().optional().or(z.literal("")),
-        phone: z.string().min(10, "Valid phone number is required"),
+        phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
         address: z.string().min(5, "Address is required"),
         category: z.enum(["education", "health", "livelihood", "emergency", "other"]),
         notes: z.string().optional(),
@@ -112,7 +112,7 @@ export const beneficiaryRouter = router({
         amount: z.number().positive("Amount must be positive"),
         donorName: z.string().min(2, "Name is required"),
         donorEmail: z.string().email().optional().or(z.literal("")),
-        donorPhone: z.string().optional(),
+        donorPhone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional().or(z.literal("")),
         transactionId: z.string().optional(),
       })
     )
@@ -222,7 +222,7 @@ export const beneficiaryRouter = router({
         id: z.number(),
         name: z.string().min(2),
         email: z.string().email().optional().or(z.literal("")),
-        phone: z.string().min(10),
+        phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
         address: z.string().min(5),
         category: z.enum(["education", "health", "livelihood", "emergency", "other"]),
         notes: z.string().optional(),
@@ -262,7 +262,7 @@ export const beneficiaryRouter = router({
       z.object({
         name: z.string().min(2, "Name is required"),
         email: z.string().email().optional().or(z.literal("")),
-        phone: z.string().min(10, "Valid phone number is required"),
+        phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
         address: z.string().min(5, "Address is required"),
         category: z.enum(["education", "health", "livelihood", "emergency", "other"]),
         notes: z.string().optional(),

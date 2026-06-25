@@ -3,12 +3,13 @@ import { publicProcedure, router, protectedProcedure } from "../_core/trpc";
 import { getDb } from "../db";
 import { hashPassword, verifyPassword, createJWT } from "../auth";
 import { users, members } from "../../drizzle/schema";
-import { eq, desc, like } from "drizzle-orm";
+import { eq, desc, like, and, gt } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { toSafeUser } from "../utils/auth";
 import crypto from "crypto";
 import { COOKIE_NAME } from "../../shared/const";
 import { generateMembershipNumber } from "../_core/shared";
+import { sendPasswordResetEmail } from "../services/email";
 
 const handoffCodes = new Map<string, { token: string, expires: number }>();
 
@@ -72,7 +73,7 @@ export const authRouter = router({
         email: z.string().email(),
         password: z.string().min(6),
         name: z.string().min(2),
-        phone: z.string().optional(),
+        phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional().or(z.literal("")),
       })
     )
     .mutation(async ({ input }) => {
@@ -179,4 +180,112 @@ export const authRouter = router({
 
     return { success: true, message: "Logged out. Please clear local tokens." };
   }),
+
+  // Request password reset email
+  forgotPassword: publicProcedure
+    .input(
+      z.object({
+        email: z.string().email(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const user = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
+
+      // To prevent user enumeration, we always return a generic success message
+      const successResponse = {
+        success: true,
+        message: "If an account with that email exists, a reset link has been sent.",
+      };
+
+      if (user.length === 0) {
+        return successResponse;
+      }
+
+      const userData = user[0];
+
+      // Generate random token
+      const token = crypto.randomBytes(32).toString('hex');
+      // Hash it for DB storage
+      const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+      // Set expiration to 1 hour from now
+      const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
+
+      // Save token to DB
+      await db
+        .update(users)
+        .set({
+          resetToken: hashedToken,
+          resetTokenExpiry,
+        })
+        .where(eq(users.id, userData.id));
+
+      // Send the email
+      const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}`;
+      console.log(`[Password Reset] Link generated for ${userData.email || input.email}: ${resetLink}`);
+      try {
+        await sendPasswordResetEmail(userData.email || input.email, resetLink);
+      } catch (err) {
+        console.error("Failed to send password reset email:", err);
+      }
+
+      return successResponse;
+    }),
+
+  // Reset password using token
+  resetPassword: publicProcedure
+    .input(
+      z.object({
+        token: z.string(),
+        newPassword: z.string().min(6),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      // Hash the incoming token to match what is stored in DB
+      const hashedToken = crypto.createHash('sha256').update(input.token).digest('hex');
+
+      // Find user with matching hashed token and where expiry is in the future
+      const user = await db
+        .select()
+        .from(users)
+        .where(
+          and(
+            eq(users.resetToken, hashedToken),
+            gt(users.resetTokenExpiry, new Date())
+          )
+        )
+        .limit(1);
+
+      if (user.length === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Invalid or expired password reset token.",
+        });
+      }
+
+      const userData = user[0];
+
+      // Hash the new password
+      const passwordHash = await hashPassword(input.newPassword);
+
+      // Update password and clear the token columns
+      await db
+        .update(users)
+        .set({
+          passwordHash,
+          resetToken: null,
+          resetTokenExpiry: null,
+        })
+        .where(eq(users.id, userData.id));
+
+      return {
+        success: true,
+        message: "Your password has been reset successfully. You can now log in.",
+      };
+    }),
 });

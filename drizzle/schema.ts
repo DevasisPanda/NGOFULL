@@ -46,6 +46,8 @@ export const users = mysqlTable("users", {
   state: varchar("state", { length: 100 }),
   city: varchar("city", { length: 100 }),
   designation: varchar("designation", { length: 255 }),
+  resetToken: varchar("resetToken", { length: 255 }),
+  resetTokenExpiry: timestamp("resetTokenExpiry"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -142,7 +144,7 @@ export type InsertCertificate = typeof certificates.$inferInsert;
 export const certificateTemplates = mysqlTable("certificateTemplates", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  type: mysqlEnum("type", ["membership", "achievement", "visitor", "volunteer"]).notNull(),
+  type: varchar("type", { length: 100 }).notNull(),
   templateImage: text("templateImage"), // S3 URL
   designJson: json("designJson"), // Template design data
   createdAt: timestamp("createdAt").defaultNow().notNull(),

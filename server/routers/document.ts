@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { protectedProcedure, router, adminProcedure, publicProcedure } from "../_core/trpc";
 import { getDb } from "../db";
-import { idCards, certificates, appointmentLetters, members, users, organizationCertificates } from "../../drizzle/schema";
+import { idCards, certificates, appointmentLetters, members, users, organizationCertificates, certificateTemplates } from "../../drizzle/schema";
 import { eq, desc, and, or } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
@@ -620,6 +620,78 @@ export const documentRouter = router({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: `Failed to delete organization certificate: ${error}`,
+        });
+      }
+    }),
+
+  getTemplateConfigs: publicProcedure
+    .query(async () => {
+      const db = await getDb();
+      if (!db) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database not available",
+        });
+      }
+      try {
+        return await db.select().from(certificateTemplates);
+      } catch (error) {
+        console.error("Error fetching template configs:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Failed to fetch template configs: ${error}`,
+        });
+      }
+    }),
+
+  saveTemplateConfig: adminProcedure
+    .input(
+      z.object({
+        type: z.string(),
+        name: z.string(),
+        templateImage: z.string().optional(),
+        designJson: z.any(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database not available",
+        });
+      }
+      try {
+        const existing = await db
+          .select()
+          .from(certificateTemplates)
+          .where(eq(certificateTemplates.type, input.type))
+          .limit(1);
+
+        if (existing.length > 0) {
+          await db
+            .update(certificateTemplates)
+            .set({
+              name: input.name,
+              templateImage: input.templateImage || existing[0].templateImage,
+              designJson: input.designJson,
+              updatedAt: new Date(),
+            })
+            .where(eq(certificateTemplates.type, input.type));
+        } else {
+          await db.insert(certificateTemplates).values({
+            name: input.name,
+            type: input.type,
+            templateImage: input.templateImage || "",
+            designJson: input.designJson,
+          });
+        }
+        return { success: true, message: "Template layout saved successfully" };
+      } catch (error) {
+        console.error("Error saving template config:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Failed to save template config: ${error}`,
         });
       }
     }),

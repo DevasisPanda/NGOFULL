@@ -53,7 +53,7 @@ export const paymentRouter = router({
         currency: z.string().default("INR"),
         donorName: z.string().min(1, "Name is required"),
         donorEmail: z.string().email("Valid email is required"),
-        donorPhone: z.string().optional(),
+        donorPhone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional().or(z.literal("")),
         purpose: z.string().optional(),
         campaignId: z.number().optional(),
       })
@@ -166,7 +166,7 @@ export const paymentRouter = router({
       const receiptNumber = `RCP-${nanoid(10).toUpperCase()}`;
       const donationAmount = parseFloat(txn.amount.toString());
 
-      const [donation] = await db
+      const [insertResult] = await db
         .insert(donations)
         .values({
           donorName: txn.donorName,
@@ -182,15 +182,16 @@ export const paymentRouter = router({
           receiptNumber,
           createdAt: new Date(),
           updatedAt: new Date(),
-        })
-        .$returningId();
+        });
+
+      const donationId = insertResult.insertId;
 
       // Update payment transaction to link the donation
       await db
         .update(paymentTransactions)
         .set({
           status: "completed",
-          donationId: donation[0].id,
+          donationId: donationId,
           razorpayPaymentId: input.razorpayPaymentId,
           razorpaySignature: input.razorpaySignature,
           responseData: {
@@ -239,7 +240,7 @@ export const paymentRouter = router({
 
       return {
         success: true,
-        donationId: donation[0].id,
+        donationId: donationId,
         receiptNumber,
         message: "Payment verified and donation recorded successfully.",
       };

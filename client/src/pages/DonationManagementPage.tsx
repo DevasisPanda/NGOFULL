@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { FileText, QrCode, Trash2, Edit, Download, Image as ImageIcon, Calendar, Search, Check, Loader2 } from "lucide-react";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { VerifiableDocument } from "@/components/VerifiableDocument";
 import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { jsPDF } from "jspdf";
@@ -71,6 +72,7 @@ export default function DonationManagementPage() {
   const { data: myDonationsData } = trpc.donation.getMyDonations.useQuery({ page: 1, pageSize: 1000 });
   const { data: allDonationsData, isLoading: isAllLoading } = trpc.donation.getAll.useQuery({ page: 1, pageSize: 1000 }, { enabled: user?.role === "admin" });
   const { data: stats } = trpc.donation.getStats.useQuery(undefined, { enabled: user?.role === "admin" });
+  const { data: dbTemplates } = trpc.document.getTemplateConfigs.useQuery();
 
   // Mutations
   const createDonationMutation = trpc.donation.create.useMutation({
@@ -867,45 +869,19 @@ export default function DonationManagementPage() {
 
           <div className="py-4 flex justify-center">
             {selectedReceiptDonation && (
-              <div ref={receiptRef} className="relative w-[320px] h-[452px] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
-                <img 
-                  src="https://res.cloudinary.com/dxmovdiru/image/upload/v1781611665/ngo-management/templates/donation_receipt_template.jpg" 
-                  alt="Donation Receipt Template" 
-                  className="w-full h-full object-cover" 
-                />
-                
-                {/* Receipt Number */}
-                <div className="absolute top-[17.5%] left-[23%] font-mono text-[9px] font-bold text-slate-800">
-                  {selectedReceiptDonation.receiptNumber}
-                </div>
-
-                {/* Date */}
-                <div className="absolute top-[17.5%] right-[22%] font-mono text-[9px] font-bold text-slate-800">
-                  {selectedReceiptDonation.createdAt ? format(new Date(selectedReceiptDonation.createdAt), "dd-MM-yyyy") : ""}
-                </div>
-
-                {/* Donor Name */}
-                <div className="absolute top-[30%] left-[24%] text-[10.5px] font-bold text-slate-800">
-                  {selectedReceiptDonation.donorName || "Valued Donor"}
-                </div>
-
-                {/* Amount */}
-                <div className="absolute top-[44%] left-[24%] text-[11px] font-extrabold text-teal-800">
-                  ₹{parseFloat(selectedReceiptDonation.amount).toLocaleString("en-IN")}
-                </div>
-
-                {/* Purpose */}
-                <div className="absolute top-[56.5%] left-[24%] text-[10px] text-slate-700 font-bold max-w-[65%] line-clamp-1">
-                  {selectedReceiptDonation.purpose || "General NGO Fund"}
-                </div>
-
-                {/* QR Code Indicator */}
-                <div className="absolute bottom-[8%] right-[10%]">
-                  <div className="w-10 h-10 bg-white p-0.5 border rounded flex items-center justify-center">
-                    <QrCode className="w-8 h-8 text-orange-600 opacity-65" />
-                  </div>
-                </div>
-              </div>
+              <VerifiableDocument
+                templateId="donation"
+                fieldValues={{
+                  receiptNumber: selectedReceiptDonation.receiptNumber,
+                  date: selectedReceiptDonation.createdAt ? format(new Date(selectedReceiptDonation.createdAt), "dd-MM-yyyy") : "",
+                  donorName: selectedReceiptDonation.donorName || "Valued Donor",
+                  amount: `₹${parseFloat(selectedReceiptDonation.amount).toLocaleString("en-IN")}`,
+                  purpose: selectedReceiptDonation.purpose || "General NGO Fund"
+                }}
+                dbTemplates={dbTemplates}
+                cardRef={receiptRef}
+                className="max-w-[320px] mx-auto rounded-xl"
+              />
             )}
           </div>
 
