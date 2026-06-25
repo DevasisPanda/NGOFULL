@@ -6,12 +6,25 @@ import { format, isBefore, addDays } from "date-fns";
 import { Filter, Trash2, Edit, Eye, FileText, ChevronsUpDown, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export default function ExpiringMembershipsPage() {
   const { data, isLoading } = trpc.membership.getActiveWithDetails.useQuery({ page: 1, pageSize: 1000 });
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const utils = trpc.useUtils();
+
+  const deleteMembershipMutation = trpc.membership.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Membership deleted successfully");
+      utils.membership.getActiveWithDetails.invalidate();
+    },
+    onError: (err) => {
+      toast.error(err.message);
+    }
+  });
 
   if (isLoading) {
     return <div className="p-8">Loading expiring memberships...</div>;
@@ -69,7 +82,13 @@ export default function ExpiringMembershipsPage() {
         <Button variant="outline" className="flex gap-2 items-center text-gray-700 bg-white">
           <Filter className="w-4 h-4" /> Filter
         </Button>
-        <Button variant="destructive" className="bg-red-500 hover:bg-red-600">
+        <Button variant="destructive" className="bg-red-500 hover:bg-red-600" onClick={() => {
+          if (selectedIds.size === 0) { toast.error("No memberships selected"); return; }
+          if (window.confirm(`Permanently delete ${selectedIds.size} selected membership(s)? This removes the membership records. Cannot be undone.`)) {
+            selectedIds.forEach((id) => deleteMembershipMutation.mutate({ membershipId: id }));
+            setSelectedIds(new Set());
+          }
+        }}>
           Delete Selected
         </Button>
       </div>
@@ -117,7 +136,15 @@ export default function ExpiringMembershipsPage() {
                   </th>
                   <th className="px-2 py-3 border-r border-gray-200 w-16 align-middle">
                     <div className="flex flex-col items-center justify-center text-gray-500 font-bold gap-1">
-                      <input type="checkbox" className="rounded border-gray-300" />
+                      <input type="checkbox" className="rounded border-gray-300"
+                        checked={selectedIds.size === paginatedMembers.length && paginatedMembers.length > 0}
+                        onChange={() => {
+                          if (selectedIds.size === paginatedMembers.length) {
+                            setSelectedIds(new Set());
+                          } else {
+                            setSelectedIds(new Set(paginatedMembers.map(m => m.id)));
+                          }
+                        }} />
                       <div className="flex items-center gap-1">
                         <span>Select All</span>
                         <ChevronsUpDown className="w-3 h-3 opacity-50" />
@@ -151,7 +178,14 @@ export default function ExpiringMembershipsPage() {
                           {startIndex + index + 1}
                         </td>
                         <td className="px-2 py-2 border-r border-gray-200 text-center">
-                          <input type="checkbox" className="rounded border-gray-300" />
+                          <input type="checkbox" className="rounded border-gray-300"
+                            checked={selectedIds.has(member.id)}
+                            onChange={() => {
+                              const next = new Set(selectedIds);
+                              if (next.has(member.id)) next.delete(member.id);
+                              else next.add(member.id);
+                              setSelectedIds(next);
+                            }} />
                         </td>
                         <td className="px-3 py-2 border-r border-gray-200 text-gray-800 leading-snug whitespace-normal">
                           <span className="font-semibold">{member.membershipNumber}</span> / {member.name || "N/A"} / <br className="hidden sm:block" />
@@ -188,7 +222,12 @@ export default function ExpiringMembershipsPage() {
                             <Button size="icon" variant="outline" className="h-7 w-7 text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100">
                               <Edit className="w-3.5 h-3.5" />
                             </Button>
-                            <Button size="icon" variant="outline" className="h-7 w-7 text-red-600 bg-red-50 border-red-200 hover:bg-red-100">
+                            <Button size="icon" variant="outline" className="h-7 w-7 text-red-600 bg-red-50 border-red-200 hover:bg-red-100" onClick={() => {
+                              const name = member.name || member.email || `membership #${member.id}`;
+                              if (window.confirm(`Delete membership for ${name}? This removes the membership record. Cannot be undone.`)) {
+                                deleteMembershipMutation.mutate({ membershipId: member.id });
+                              }
+                            }}>
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           </div>

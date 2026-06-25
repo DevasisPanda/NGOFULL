@@ -14,6 +14,7 @@ export default function BlockedUsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   // Fetch all users
   const { data, isLoading } = trpc.admin.getAllUsers.useQuery({ page: 1, pageSize: 1000 });
@@ -28,6 +29,16 @@ export default function BlockedUsersPage() {
     },
     onError: (error) => {
       toast.error(error.message);
+    }
+  });
+
+  const deleteMutation = trpc.admin.deleteUser.useMutation({
+    onSuccess: () => {
+      toast.success("User has been permanently deleted.");
+      utils.admin.getAllUsers.invalidate();
+    },
+    onError: (err) => {
+      toast.error(err.message);
     }
   });
 
@@ -73,6 +84,23 @@ export default function BlockedUsersPage() {
         </div>
       </div>
 
+      <div className="flex gap-2 mb-4">
+        <Button variant="destructive" className="bg-red-500 hover:bg-red-600" onClick={() => {
+          if (selectedIds.size === 0) { toast.error("No users selected"); return; }
+          const adminUsers = blockedUsers.filter(u => selectedIds.has(u.id) && u.role === "admin");
+          if (adminUsers.length > 0) {
+            toast.error("Cannot delete Admin users in bulk. Please deselect Admins first.");
+            return;
+          }
+          if (window.confirm(`Permanently delete ${selectedIds.size} selected blocked user(s)? This removes the users and all associated data. Cannot be undone.`)) {
+            selectedIds.forEach((id) => deleteMutation.mutate({ userId: id }));
+            setSelectedIds(new Set());
+          }
+        }}>
+          Delete Selected
+        </Button>
+      </div>
+
       <Card className="border-gray-200 shadow-sm bg-white">
         <CardContent className="p-0">
           
@@ -114,7 +142,15 @@ export default function BlockedUsersPage() {
                   </th>
                   <th className="px-2 py-3 border-r border-gray-200 w-16 align-middle">
                     <div className="flex flex-col items-center justify-center text-gray-500 font-bold gap-1">
-                      <input type="checkbox" className="rounded border-gray-300" />
+                      <input type="checkbox" className="rounded border-gray-300"
+                        checked={selectedIds.size === paginatedUsers.length && paginatedUsers.length > 0}
+                        onChange={() => {
+                          if (selectedIds.size === paginatedUsers.length) {
+                            setSelectedIds(new Set());
+                          } else {
+                            setSelectedIds(new Set(paginatedUsers.map(u => u.id)));
+                          }
+                        }} />
                       <div className="flex items-center gap-1">
                         <span>Select All</span>
                         <ChevronsUpDown className="w-3 h-3 opacity-50" />
@@ -143,7 +179,14 @@ export default function BlockedUsersPage() {
                         {startIndex + index + 1}
                       </td>
                       <td className="px-2 py-2 border-r border-gray-200 text-center">
-                        <input type="checkbox" className="rounded border-gray-300" />
+                        <input type="checkbox" className="rounded border-gray-300"
+                          checked={selectedIds.has(user.id)}
+                          onChange={() => {
+                            const next = new Set(selectedIds);
+                            if (next.has(user.id)) next.delete(user.id);
+                            else next.add(user.id);
+                            setSelectedIds(next);
+                          }} />
                       </td>
                       <td className="px-3 py-2 border-r border-gray-200 text-gray-800 leading-snug whitespace-normal">
                         <div className="flex items-center gap-2.5">
@@ -201,7 +244,12 @@ export default function BlockedUsersPage() {
                           <Button size="icon" variant="outline" className="h-7 w-7 text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100">
                             <Edit className="w-3.5 h-3.5" />
                           </Button>
-                          <Button size="icon" variant="outline" className="h-7 w-7 text-red-600 bg-red-50 border-red-200 hover:bg-red-100">
+                          <Button size="icon" variant="outline" className="h-7 w-7 text-red-600 bg-red-50 border-red-200 hover:bg-red-100" onClick={() => {
+                            const name = user.name || user.email || "this user";
+                            if (window.confirm(`Permanently delete ${name}? This removes the user and all associated data. Cannot be undone.`)) {
+                              deleteMutation.mutate({ userId: user.id });
+                            }
+                          }} disabled={user.role === "admin"}>
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </div>
