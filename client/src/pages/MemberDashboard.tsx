@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { VerifiableDocument } from "@/components/VerifiableDocument";
+import { CaptureActions } from "@/components/CaptureActions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -33,6 +34,8 @@ export default function MemberDashboard() {
   const [isPreviewCertModalOpen, setIsPreviewCertModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [selectedReceiptDonation, setSelectedReceiptDonation] = useState<any>(null);
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  const appointmentRef = useRef<HTMLDivElement>(null);
 
   // Donation form states
   const [donationAmount, setDonationAmount] = useState("");
@@ -46,6 +49,7 @@ export default function MemberDashboard() {
   const { data: myCertificates, isLoading: isCertificatesLoading } = trpc.document.getMyCertificates.useQuery(undefined, { enabled: isCertificatesModalOpen });
   const { data: myIDCard, isLoading: isIDCardLoading } = trpc.document.getMyIDCard.useQuery(undefined, { enabled: isIDCardModalOpen });
   const { data: dbTemplates } = trpc.document.getTemplateConfigs.useQuery();
+  const { data: myAppointmentLetters } = trpc.document.getMyAppointmentLetters.useQuery();
 
   // Mutation
   const createDonationMutation = trpc.donation.create.useMutation({
@@ -365,6 +369,12 @@ export default function MemberDashboard() {
                 <CreditCard className="h-4 w-4" />
                 View & Download ID Card
               </Button>
+              {myAppointmentLetters && myAppointmentLetters.length > 0 && (
+                <Button className="h-12 bg-indigo-600 hover:bg-indigo-700 gap-2" onClick={() => setIsAppointmentModalOpen(true)}>
+                  <FileText className="h-4 w-4" />
+                  View Appointment Letter
+                </Button>
+              )}
               <Button className="h-12 bg-green-600 hover:bg-green-700 gap-2" onClick={() => setIsDonationModalOpen(true)}>
                 <Heart className="h-4 w-4" />
                 Make a Donation
@@ -657,11 +667,11 @@ export default function MemberDashboard() {
                 className="max-w-[280px] mx-auto rounded-2xl"
               >
                 {/* Profile Photo Overlay */}
-                <div className="absolute top-[26.2%] left-[50%] -translate-x-1/2 w-[32.1%] aspect-[1/1] rounded-full overflow-hidden border-2 border-white shadow bg-white">
+                <div className="absolute top-[41.5%] left-[23%] -translate-x-1/2 w-[16%] aspect-[1/1] rounded-xl overflow-hidden border border-gray-100 shadow bg-white flex items-center justify-center">
                   {profile?.profileImage ? (
                     <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-teal-800 text-[6cqw] font-bold bg-teal-100">
+                    <div className="w-full h-full flex items-center justify-center text-teal-800 text-[3.5cqw] font-bold bg-teal-100">
                       {profile?.name?.slice(0, 2).toUpperCase() || 'MB'}
                     </div>
                   )}
@@ -706,11 +716,11 @@ export default function MemberDashboard() {
                   dbTemplates={dbTemplates}
                   className="max-w-[280px] mx-auto rounded-2xl"
                 >
-                  <div className="absolute top-[26.2%] left-[50%] -translate-x-1/2 w-[32.1%] aspect-[1/1] rounded-full overflow-hidden border-2 border-white shadow bg-white">
+                  <div className="absolute top-[41.5%] left-[23%] -translate-x-1/2 w-[16%] aspect-[1/1] rounded-xl overflow-hidden border border-gray-100 shadow bg-white flex items-center justify-center">
                     {profile?.profileImage ? (
                       <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-teal-800 text-[6cqw] font-bold bg-teal-100">
+                      <div className="w-full h-full flex items-center justify-center text-teal-800 text-[3.5cqw] font-bold bg-teal-100">
                         {profile?.name?.slice(0, 2).toUpperCase() || 'MB'}
                       </div>
                     )}
@@ -782,6 +792,48 @@ export default function MemberDashboard() {
           <DialogFooter className="pt-2 border-t">
             <Button className="w-full bg-teal-700 hover:bg-teal-800 text-white" onClick={() => setIsReceiptModalOpen(false)}>
               Close Receipt
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 7. Appointment Letter Preview Dialog */}
+      <Dialog open={isAppointmentModalOpen} onOpenChange={setIsAppointmentModalOpen}>
+        <DialogContent className="max-w-xl bg-white p-6 max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-teal-800">
+              <FileText className="h-5 w-5 text-indigo-600" />
+              Appointment Letter Preview
+            </DialogTitle>
+            <DialogDescription>
+              Preview of your official appointment letter from Valmiki Samaj Charitable Trust.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 flex justify-center">
+            {myAppointmentLetters && myAppointmentLetters.length > 0 && (
+              <VerifiableDocument
+                templateId="appointment"
+                fieldValues={{
+                  letterNumber: myAppointmentLetters[0].letterNumber,
+                  name1: profile?.name || "",
+                  name2: profile?.name || "",
+                  post: myAppointmentLetters[0].position,
+                  mobile: profile?.phone || "N/A",
+                  fromDate: myAppointmentLetters[0].appointmentDate ? new Date(myAppointmentLetters[0].appointmentDate).toLocaleDateString() : "",
+                  toDate: "Ongoing"
+                }}
+                dbTemplates={dbTemplates}
+                cardRef={appointmentRef}
+                className="max-w-md mx-auto rounded-xl"
+              />
+            )}
+          </div>
+
+          <DialogFooter className="pt-2 border-t flex gap-2">
+            <CaptureActions cardRef={appointmentRef} filename={`Appointment_Letter_${profile?.name?.replace(/\s+/g, "_") || "member"}`} />
+            <Button className="bg-teal-700 hover:bg-teal-800 text-white" onClick={() => setIsAppointmentModalOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

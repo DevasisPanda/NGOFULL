@@ -198,6 +198,7 @@ export const authRouter = router({
       const successResponse = {
         success: true,
         message: "If an account with that email exists, a reset link has been sent.",
+        devLink: undefined as string | undefined,
       };
 
       if (user.length === 0) {
@@ -225,10 +226,16 @@ export const authRouter = router({
       // Send the email
       const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}`;
       console.log(`[Password Reset] Link generated for ${userData.email || input.email}: ${resetLink}`);
+      let emailSent = false;
       try {
         await sendPasswordResetEmail(userData.email || input.email, resetLink);
+        emailSent = true;
       } catch (err) {
         console.error("Failed to send password reset email:", err);
+      }
+
+      if (process.env.NODE_ENV === "development" || !emailSent) {
+        successResponse.devLink = resetLink;
       }
 
       return successResponse;

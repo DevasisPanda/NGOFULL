@@ -93,6 +93,8 @@ export const documentRouter = router({
             memberProfileImage: users.profileImage,
             memberDesignation: users.designation,
             memberEmail: users.email,
+            memberPhone: users.phone,
+            memberCity: users.city,
             membershipNumber: members.membershipNumber,
           })
           .from(idCards)
@@ -127,6 +129,8 @@ export const documentRouter = router({
             profileImage: cardData.memberProfileImage,
             designation: cardData.memberDesignation,
             email: cardData.memberEmail,
+            phone: cardData.memberPhone,
+            city: cardData.memberCity,
             membershipNumber: cardData.membershipNumber,
           },
           message: isExpired ? "ID Card has expired" : "ID Card is valid",
@@ -426,16 +430,28 @@ export const documentRouter = router({
 
       try {
         const result = await db
-          .select()
+          .select({
+            letter: appointmentLetters,
+            recipientName: users.name,
+            recipientPhone: users.phone,
+            recipientEmail: users.email,
+          })
           .from(appointmentLetters)
-          .where(eq(appointmentLetters.qrCode, input.qrCode))
+          .leftJoin(users, eq(appointmentLetters.recipientId, users.id))
+          .where(
+            or(
+              eq(appointmentLetters.qrCode, input.qrCode),
+              eq(appointmentLetters.letterNumber, input.qrCode)
+            )
+          )
           .limit(1);
 
         if (result.length === 0) {
           return { valid: false, message: "Appointment letter not found" };
         }
 
-        const letter = result[0];
+        const letterData = result[0];
+        const letter = letterData.letter;
         return {
           valid: true,
           letter: {
@@ -443,6 +459,9 @@ export const documentRouter = router({
             position: letter.position,
             department: letter.department,
             appointmentDate: letter.appointmentDate,
+            recipientName: letterData.recipientName,
+            recipientPhone: letterData.recipientPhone,
+            recipientEmail: letterData.recipientEmail,
           },
           message: "Appointment letter is valid",
         };
@@ -512,6 +531,32 @@ export const documentRouter = router({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: `Failed to fetch ID card: ${error}`,
+        });
+      }
+    }),
+
+  // Get logged-in user's appointment letters (protectedProcedure)
+  getMyAppointmentLetters: protectedProcedure
+    .query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database not available",
+        });
+      }
+
+      try {
+        return await db
+          .select()
+          .from(appointmentLetters)
+          .where(eq(appointmentLetters.recipientId, ctx.user.id))
+          .orderBy(desc(appointmentLetters.createdAt));
+      } catch (error) {
+        console.error("Error fetching my appointment letters:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Failed to fetch appointment letters: ${error}`,
         });
       }
     }),

@@ -89,6 +89,7 @@ export function VerifiableDocument({
   }, [template.imgWidth]);
 
   const activeWidth = containerWidth || template.imgWidth;
+  const scaleFactor = activeWidth / template.imgWidth;
 
   return (
     <div
@@ -96,56 +97,74 @@ export function VerifiableDocument({
       className={`relative w-full overflow-hidden select-none ${className}`}
       style={{
         aspectRatio: aspect,
-        containerType: "inline-size",
         backgroundColor: "#ffffff",
       }}
     >
       <img
         src={template.src}
         alt={template.name}
-        className="w-full h-full object-cover pointer-events-none"
+        className="w-full h-full object-cover pointer-events-none absolute inset-0"
         crossOrigin="anonymous"
       />
-      {template.fields.map((field) => {
-        const val = fieldValues[field.id];
-        if (val === undefined || val === null || val === "") return null;
+      
+      {/* Absolute Scaling Overlay Layer */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          width: "100%",
+          height: "100%",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            width: `${template.imgWidth}px`,
+            height: `${template.imgHeight}px`,
+            left: 0,
+            top: 0,
+            transform: `scale(${scaleFactor})`,
+            transformOrigin: "top left",
+            pointerEvents: "none",
+          }}
+        >
+          {template.fields.map((field) => {
+            const val = fieldValues[field.id];
+            if (val === undefined || val === null || val === "") return null;
 
-        // Compute pixel size of text based on original field size, original image width, and actual container width
-        const sizeInPx = (field.size / template.imgWidth) * activeWidth;
-        
-        // Multi-line values (useful for position blocks or descriptions)
-        const lines = val.split("\n");
+            const lines = val.split("\n");
 
-        const style: React.CSSProperties = {
-          position: "absolute",
-          left: `${(field.x / template.imgWidth) * 100}%`,
-          top: `${(field.y / template.imgHeight) * 100}%`,
-          fontSize: `${sizeInPx}px`,
-          color: field.color,
-          fontWeight: field.weight === "bold" ? "bold" : "normal",
-          fontFamily: "Roboto, 'Open Sans', 'Inter', sans-serif",
-          textAlign: field.align,
-          transform:
-            field.align === "center"
-              ? "translate(-50%, -50%)"
-              : field.align === "right"
-              ? "translate(-100%, -50%)"
-              : "translate(0, -50%)",
-          whiteSpace: "nowrap",
-          lineHeight: 1.2,
-          pointerEvents: "none",
-        };
+            const style: React.CSSProperties = {
+              position: "absolute",
+              left: `${field.x}px`,
+              top: `${field.y}px`,
+              fontSize: `${field.size}px`,
+              color: field.color,
+              fontWeight: field.weight === "bold" ? "bold" : "normal",
+              fontFamily: "Roboto, 'Open Sans', 'Inter', sans-serif",
+              textAlign: field.align,
+              transform:
+                field.align === "center"
+                  ? "translate(-50%, -50%)"
+                  : field.align === "right"
+                  ? "translate(-100%, -50%)"
+                  : "translate(0, -50%)",
+              whiteSpace: "nowrap",
+              lineHeight: 1.2,
+              pointerEvents: "none",
+            };
 
-        return (
-          <span key={field.id} style={style}>
-            {lines.map((line, idx) => (
-              <span key={idx} style={{ display: idx > 0 ? "block" : "inline" }}>
-                {line}
+            return (
+              <span key={field.id} style={style}>
+                {lines.map((line, idx) => (
+                  <span key={idx} style={{ display: idx > 0 ? "block" : "inline" }}>
+                    {line}
+                  </span>
+                ))}
               </span>
-            ))}
-          </span>
-        );
-      })}
+            );
+          })}
+        </div>
+      </div>
       {children}
     </div>
   );
