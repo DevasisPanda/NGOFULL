@@ -62,7 +62,7 @@ export default function SendSingleMessagePage() {
           <Info className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold text-blue-900">WhatsApp Sync Enabled</p>
-            <p className="text-blue-700 mt-0.5">This notice will automatically be redirected to the recipient's phone number as a WhatsApp message via Twilio.</p>
+            <p className="text-blue-700 mt-0.5">This notice will automatically be redirected to the recipient's phone number as a WhatsApp message via WhatsApp REST API.</p>
           </div>
         </CardContent>
       </Card>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +29,24 @@ import { toast } from "sonner";
 export default function BeneficiaryManagementPage() {
   const [location, setLocation] = useLocation();
   const [page, setPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState<"pending" | "active" | "inactive" | "completed" | "rejected">("pending");
+
+  const getInitialStatus = (path: string): "pending" | "active" | "inactive" | "completed" | "rejected" => {
+    if (path.includes("/active")) return "active";
+    if (path.includes("/inactive")) return "inactive";
+    if (path.includes("/completed")) return "completed";
+    if (path.includes("/rejected")) return "rejected";
+    return "pending";
+  };
+
+  const [statusFilter, setStatusFilter] = useState<"pending" | "active" | "inactive" | "completed" | "rejected">(
+    getInitialStatus(location)
+  );
+
+  useEffect(() => {
+    setStatusFilter(getInitialStatus(location));
+    setPage(1);
+  }, [location]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const pageSize = 10;
 
@@ -42,9 +59,11 @@ export default function BeneficiaryManagementPage() {
   });
 
   const updateStatusMutation = trpc.beneficiary.adminUpdateStatus.useMutation({
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       toast.success("Beneficiary status updated!");
       utils.beneficiary.adminGetAll.invalidate();
+      const targetPath = variables.status === "pending" ? "requests" : variables.status;
+      setLocation(`/admin/beneficiary/${targetPath}`);
     },
     onError: (err) => {
       toast.error(err.message);
@@ -52,10 +71,12 @@ export default function BeneficiaryManagementPage() {
   });
 
   const adminUpdateMutation = trpc.beneficiary.adminUpdate.useMutation({
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       toast.success("Beneficiary details updated successfully!");
       setIsEditOpen(false);
       utils.beneficiary.adminGetAll.invalidate();
+      const targetPath = variables.status === "pending" ? "requests" : variables.status;
+      setLocation(`/admin/beneficiary/${targetPath}`);
     },
     onError: (err) => {
       toast.error(err.message);
@@ -410,35 +431,35 @@ export default function BeneficiaryManagementPage() {
           <Button
             variant={statusFilter === "pending" ? "default" : "outline"}
             className={statusFilter === "pending" ? "bg-amber-600 hover:bg-amber-700 text-white" : ""}
-            onClick={() => { setStatusFilter("pending"); setPage(1); }}
+            onClick={() => setLocation("/admin/beneficiary/requests")}
           >
             Pending Requests
           </Button>
           <Button
             variant={statusFilter === "active" ? "default" : "outline"}
             className={statusFilter === "active" ? "bg-red-600 hover:bg-red-700 text-white" : ""}
-            onClick={() => { setStatusFilter("active"); setPage(1); }}
+            onClick={() => setLocation("/admin/beneficiary/active")}
           >
             Active Cases
           </Button>
           <Button
             variant={statusFilter === "completed" ? "default" : "outline"}
             className={statusFilter === "completed" ? "bg-green-600 hover:bg-green-700 text-white" : ""}
-            onClick={() => { setStatusFilter("completed"); setPage(1); }}
+            onClick={() => setLocation("/admin/beneficiary/completed")}
           >
             Completed Cases
           </Button>
           <Button
             variant={statusFilter === "inactive" ? "default" : "outline"}
             className={statusFilter === "inactive" ? "bg-gray-600 hover:bg-gray-700 text-white" : ""}
-            onClick={() => { setStatusFilter("inactive"); setPage(1); }}
+            onClick={() => setLocation("/admin/beneficiary/inactive")}
           >
             Inactive/Paused
           </Button>
           <Button
             variant={statusFilter === "rejected" ? "default" : "outline"}
             className={statusFilter === "rejected" ? "bg-slate-600 hover:bg-slate-700 text-white" : ""}
-            onClick={() => { setStatusFilter("rejected"); setPage(1); }}
+            onClick={() => setLocation("/admin/beneficiary/rejected")}
           >
             Rejected Requests
           </Button>

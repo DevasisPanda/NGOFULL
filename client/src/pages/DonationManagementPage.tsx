@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { useRazorpayPayment } from "@/hooks/useRazorpayPayment";
 import { CaptureActions } from "@/components/CaptureActions";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { FileText, QrCode, Trash2, Edit, Download, Image as ImageIcon, Calendar, Search, Check, Loader2 } from "lucide-react";
+import { FileText, QrCode, Trash2, Edit, Download, Image as ImageIcon, Calendar, Search, Check, Loader2, XCircle, PlusCircle, Info } from "lucide-react";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { VerifiableDocument } from "@/components/VerifiableDocument";
 import { Label } from "@/components/ui/label";
@@ -21,6 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useLocation } from "wouter";
 
 export default function DonationManagementPage() {
   const { user } = useAuth();
@@ -45,6 +46,7 @@ export default function DonationManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
 
   // Edit Donation Dialog State
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -122,6 +124,8 @@ export default function DonationManagementPage() {
       toast.error(err.message || "Failed to delete donation");
     },
   });
+
+
 
   const handleDonate = () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -235,6 +239,8 @@ export default function DonationManagementPage() {
   });
 
   const totalFilteredAmount = filteredDonations?.reduce((sum, d) => sum + parseFloat(d.amount), 0) ?? 0;
+
+
 
   const handleExportCSV = () => {
     if (!filteredDonations || filteredDonations.length === 0) {

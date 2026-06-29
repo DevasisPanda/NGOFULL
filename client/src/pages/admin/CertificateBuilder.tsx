@@ -39,10 +39,10 @@ const INITIAL_TEMPLATES: TemplateConfig[] = [
     name: 'Achievement Certificate',
     src: 'https://res.cloudinary.com/dxmovdiru/image/upload/v1781611663/ngo-management/templates/achievement_certificate_template.jpg',
     fields: [
-      { id: 'fullName', label: 'Recipient Name', text: 'Devasis Panda', x: 330, y: 600, size: 36, color: '#1f2937', weight: 'bold', align: 'center' },
-      { id: 'description', label: 'Description', text: 'For outstanding volunteer contribution to the community.', x: 630, y: 690, size: 26, color: '#4b5563', weight: 'normal', align: 'center' },
-      { id: 'issueDate', label: 'Issue Date', text: '22/06/2026', x: 120, y: 830, size: 20, color: '#4b5563', weight: 'bold', align: 'left' },
-      { id: 'certificateNumber', label: 'Cert No.', text: 'CERT-12345', x: 670, y: 830, size: 32, color: '#4b5563', weight: 'bold', align: 'right' }
+      { id: 'fullName', label: 'Recipient Name', text: 'Devasis Panda', x: 640, y: 530, size: 36, color: '#1f2937', weight: 'bold', align: 'center' },
+      { id: 'description', label: 'Description', text: 'For outstanding volunteer contribution to the community.', x: 640, y: 660, size: 26, color: '#4b5563', weight: 'normal', align: 'center' },
+      { id: 'issueDate', label: 'Issue Date', text: '22/06/2026', x: 180, y: 810, size: 20, color: '#4b5563', weight: 'bold', align: 'left' },
+      { id: 'certificateNumber', label: 'Cert No.', text: 'CERT-12345', x: 1100, y: 810, size: 32, color: '#4b5563', weight: 'bold', align: 'right' }
     ]
   },
   {
@@ -52,11 +52,11 @@ const INITIAL_TEMPLATES: TemplateConfig[] = [
     fields: [
       { id: 'letterNumber', label: 'Ref Number', text: 'VSCT/APP/2026/045', x: 310, y: 385, size: 20, color: '#1f2937', weight: 'bold', align: 'left' },
       { id: 'name1', label: 'Name (1st)', text: 'Devasis Panda', x: 130, y: 454, size: 22, color: '#1f2937', weight: 'bold', align: 'left' },
-      { id: 'name2', label: 'Name (2nd)', text: 'Devasis Panda', x: 409, y: 780, size: 22, color: '#1f2937', weight: 'bold', align: 'center' },
-      { id: 'post', label: 'Post / Position', text: 'VOLUNTEER COORDINATOR', x: 1080, y: 782, size: 24, color: '#0f172a', weight: 'bold', align: 'right' },
+      { id: 'name2', label: 'Name (2nd)', text: 'Devasis Panda', x: 409, y: 840, size: 22, color: '#1f2937', weight: 'bold', align: 'center' },
+      { id: 'post', label: 'Post / Position', text: 'VOLUNTEER COORDINATOR', x: 1080, y: 842, size: 24, color: '#0f172a', weight: 'bold', align: 'right' },
       { id: 'mobile', label: 'Mobile Number', text: '+91 98765 43210', x: 150, y: 420, size: 20, color: '#1f2937', weight: 'normal', align: 'left' },
-      { id: 'fromDate', label: 'From Date', text: '22-06-2026', x: 240, y: 630, size: 20, color: '#4b5563', weight: 'bold', align: 'left' },
-      { id: 'toDate', label: 'To Date', text: '22-06-2027', x: 604, y: 630, size: 20, color: '#4b5563', weight: 'bold', align: 'left' }
+      { id: 'fromDate', label: 'From Date', text: '22-06-2026', x: 240, y: 660, size: 20, color: '#4b5563', weight: 'bold', align: 'left' },
+      { id: 'toDate', label: 'To Date', text: '22-06-2027', x: 604, y: 660, size: 20, color: '#4b5563', weight: 'bold', align: 'left' }
     ]
   },
   {

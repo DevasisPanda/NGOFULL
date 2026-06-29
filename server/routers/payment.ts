@@ -8,6 +8,17 @@ import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { paginationInput } from "../_core/shared";
 
+const normalizeNumerals = (val: unknown): unknown => {
+  if (typeof val !== "string") return val;
+  const numeralsMap: Record<string, string> = {
+    // Hindi/Devanagari
+    '०': '0', '१': '1', '२': '2', '३': '3', '४': '4', '५': '5', '६': '6', '७': '7', '८': '8', '९': '9',
+    // Gujarati
+    '૦': '0', '૧': '1', '૨': '2', '૩': '3', '૪': '4', '૫': '5', '૬': '6', '૭': '7', '૮': '8', '૯': '9'
+  };
+  return val.replace(/[०-९૦-૯]/g, (char) => numeralsMap[char] || char);
+};
+
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "";
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
 
@@ -53,7 +64,10 @@ export const paymentRouter = router({
         currency: z.string().default("INR"),
         donorName: z.string().min(1, "Name is required"),
         donorEmail: z.string().email("Valid email is required"),
-        donorPhone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional().or(z.literal("")),
+        donorPhone: z.preprocess(
+          normalizeNumerals,
+          z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional().or(z.literal(""))
+        ),
         purpose: z.string().optional(),
         campaignId: z.number().optional(),
       })
@@ -269,5 +283,109 @@ export const paymentRouter = router({
       const total = countResult?.count ?? 0;
 
       return { items, total, page: input.page, pageSize: input.pageSize };
+    }),
+
+  /**
+   * Create a payment transaction manually (admin only).
+   */
+  adminCreate: adminProcedure
+    .input(
+      z.object({
+        amount: z.number().positive(),
+        donorName: z.string().min(1, "Name is required"),
+        donorEmail: z.string().email("Valid email is required"),
+        donorPhone: z.preprocess(
+          normalizeNumerals,
+          z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional().or(z.literal(""))
+        ),
+        purpose: z.string().optional(),
+        status: z.enum(["initiated", "completed", "failed"]).default("initiated"),
+        transactionId: z.string().optional(),
+        paymentMethod: z.string().default("manual"),
+        razorpayOrderId: z.string().optional(),
+        razorpayPaymentId: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const txnId = input.transactionId || `TXN-${nanoid(10).toUpperCase()}`;
+
+      await db.insert(paymentTransactions).values({
+        transactionId: txnId,
+        amount: input.amount.toString(),
+        status: input.status,
+        paymentMethod: input.paymentMethod,
+        razorpayOrderId: input.razorpayOrderId || null,
+        razorpayPaymentId: input.razorpayPaymentId || null,
+        donorName: input.donorName,
+        donorEmail: input.donorEmail,
+        donorPhone: input.donorPhone || null,
+        purpose: input.purpose || null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      return { success: true, message: "Transaction record created successfully" };
+    }),
+
+  /**
+   * Update a payment transaction record (admin only).
+   */
+  adminUpdate: adminProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        amount: z.number().positive().optional(),
+        donorName: z.string().min(1, "Name is required").optional(),
+        donorEmail: z.string().email("Valid email is required").optional(),
+        donorPhone: z.preprocess(
+          normalizeNumerals,
+          z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional().or(z.literal(""))
+        ),
+        purpose: z.string().optional(),
+        status: z.enum(["initiated", "completed", "failed"]).optional(),
+        transactionId: z.string().optional(),
+        paymentMethod: z.string().optional(),
+        razorpayOrderId: z.string().optional(),
+        razorpayPaymentId: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const updateData: any = {
+        updatedAt: new Date(),
+      };
+      if (input.amount !== undefined) updateData.amount = input.amount.toString();
+      if (input.donorName !== undefined) updateData.donorName = input.donorName;
+      if (input.donorEmail !== undefined) updateData.donorEmail = input.donorEmail;
+      if (input.donorPhone !== undefined) updateData.donorPhone = input.donorPhone || null;
+      if (input.purpose !== undefined) updateData.purpose = input.purpose || null;
+      if (input.status !== undefined) updateData.status = input.status;
+      if (input.transactionId !== undefined) updateData.transactionId = input.transactionId;
+      if (input.paymentMethod !== undefined) updateData.paymentMethod = input.paymentMethod;
+      if (input.razorpayOrderId !== undefined) updateData.razorpayOrderId = input.razorpayOrderId || null;
+      if (input.razorpayPaymentId !== undefined) updateData.razorpayPaymentId = input.razorpayPaymentId || null;
+
+      await db.update(paymentTransactions).set(updateData).where(eq(paymentTransactions.id, input.id));
+
+      return { success: true, message: "Transaction record updated successfully" };
+    }),
+
+  /**
+   * Delete a payment transaction record (admin only).
+   */
+  adminDelete: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      await db.delete(paymentTransactions).where(eq(paymentTransactions.id, input.id));
+
+      return { success: true, message: "Transaction record deleted successfully" };
     }),
 });

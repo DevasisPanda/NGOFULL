@@ -19,7 +19,7 @@ export type TemplateConfig = {
   fields: FieldConfig[];
 };
 
-// Appointment Letter template — coordinates from Certificate Builder
+// Appointment Letter template
 export const APPOINTMENT_TEMPLATE: TemplateConfig = {
   id: "appointment",
   name: "Appointment Letter",
@@ -29,11 +29,11 @@ export const APPOINTMENT_TEMPLATE: TemplateConfig = {
   fields: [
     { id: "letterNumber", label: "Ref Number", text: "", x: 310, y: 385, size: 20, color: "#1f2937", weight: "bold", align: "left" },
     { id: "name1", label: "Name (1st)", text: "", x: 130, y: 454, size: 22, color: "#1f2937", weight: "bold", align: "left" },
-    { id: "name2", label: "Name (2nd)", text: "", x: 409, y: 780, size: 22, color: "#1f2937", weight: "bold", align: "center" },
-    { id: "post", label: "Post / Position", text: "", x: 1080, y: 782, size: 24, color: "#0f172a", weight: "bold", align: "right" },
+    { id: "name2", label: "Name (2nd)", text: "", x: 409, y: 840, size: 22, color: "#1f2937", weight: "bold", align: "center" },
+    { id: "post", label: "Post / Position", text: "", x: 1080, y: 842, size: 24, color: "#0f172a", weight: "bold", align: "right" },
     { id: "mobile", label: "Mobile Number", text: "", x: 150, y: 420, size: 20, color: "#1f2937", weight: "normal", align: "left" },
-    { id: "fromDate", label: "From Date", text: "", x: 240, y: 630, size: 20, color: "#4b5563", weight: "bold", align: "left" },
-    { id: "toDate", label: "To Date", text: "", x: 604, y: 630, size: 20, color: "#4b5563", weight: "bold", align: "left" },
+    { id: "fromDate", label: "From Date", text: "", x: 240, y: 660, size: 20, color: "#4b5563", weight: "bold", align: "left" },
+    { id: "toDate", label: "To Date", text: "", x: 604, y: 660, size: 20, color: "#4b5563", weight: "bold", align: "left" },
   ],
 };
 
@@ -45,10 +45,10 @@ export const ACHIEVEMENT_TEMPLATE: TemplateConfig = {
   imgWidth: 1280,
   imgHeight: 954,
   fields: [
-    { id: "fullName", label: "Recipient Name", text: "", x: 330, y: 600, size: 36, color: "#1f2937", weight: "bold", align: "center" },
-    { id: "description", label: "Description", text: "", x: 630, y: 690, size: 26, color: "#4b5563", weight: "normal", align: "center" },
-    { id: "issueDate", label: "Issue Date", text: "", x: 120, y: 830, size: 20, color: "#4b5563", weight: "bold", align: "left" },
-    { id: "certificateNumber", label: "Cert No.", text: "", x: 670, y: 830, size: 32, color: "#4b5563", weight: "bold", align: "right" },
+    { id: "fullName", label: "Recipient Name", text: "", x: 640, y: 530, size: 36, color: "#1f2937", weight: "bold", align: "center" },
+    { id: "description", label: "Description", text: "", x: 640, y: 660, size: 26, color: "#4b5563", weight: "normal", align: "center" },
+    { id: "issueDate", label: "Issue Date", text: "", x: 180, y: 810, size: 20, color: "#4b5563", weight: "bold", align: "left" },
+    { id: "certificateNumber", label: "Cert No.", text: "", x: 1100, y: 810, size: 32, color: "#4b5563", weight: "bold", align: "right" },
   ],
 };
 
@@ -114,25 +114,25 @@ export function getTemplate(id: string): TemplateConfig | undefined {
 
 export function mergeTemplates(dbTemplates: any[] | undefined): TemplateConfig[] {
   if (!dbTemplates) return ALL_TEMPLATES;
-  return ALL_TEMPLATES.map(staticTpl => {
-    const dbTpl = dbTemplates.find(t => t.type === staticTpl.id);
+  return ALL_TEMPLATES.map((staticTpl) => {
+    const dbTpl = dbTemplates.find((t) => t.type === staticTpl.id);
     if (!dbTpl) return staticTpl;
-    
+
     let fields = staticTpl.fields;
     try {
-      if (typeof dbTpl.designJson === 'string') {
+      if (typeof dbTpl.designJson === "string") {
         fields = JSON.parse(dbTpl.designJson);
-      } else if (dbTpl.designJson && typeof dbTpl.designJson === 'object') {
+      } else if (dbTpl.designJson && typeof dbTpl.designJson === "object") {
         fields = dbTpl.designJson as any;
       }
     } catch (e) {
       console.error("Failed to parse designJson for template", dbTpl.type, e);
     }
-    
+
     return {
       ...staticTpl,
       src: dbTpl.templateImage || staticTpl.src,
-      fields
+      fields,
     };
   });
 }

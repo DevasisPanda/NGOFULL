@@ -24,7 +24,7 @@ export const documentRouter = router({
       }
 
       try {
-        const cardNumber = `CARD_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const cardNumber = `CARD-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 
         await db.insert(idCards).values({
           memberId: input.memberId,
@@ -164,7 +164,7 @@ export const documentRouter = router({
       }
 
       try {
-        const certificateNumber = `CERT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const certificateNumber = `VSCT-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 
         await db.insert(certificates).values({
           recipientId: input.recipientId,
@@ -364,7 +364,7 @@ export const documentRouter = router({
       }
 
       try {
-        const letterNumber = `APPT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const letterNumber = `APPT-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 
         await db.insert(appointmentLetters).values({
           recipientId: input.recipientId,

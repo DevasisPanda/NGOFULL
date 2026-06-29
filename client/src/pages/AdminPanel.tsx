@@ -10,6 +10,7 @@ import DonationManagementPage from "./DonationManagementPage";
 import CreateCampaignPage from "./admin/crowdfunding/CreateCampaignPage";
 import ActiveCampaignsPage from "./admin/crowdfunding/ActiveCampaignsPage";
 import CompletedCampaignsPage from "./admin/crowdfunding/CompletedCampaignsPage";
+import FailedDonationsPage from "./admin/crowdfunding/FailedDonationsPage";
 import InternshipManagementPage from "./InternshipManagementPage";
 import EventManagementPage from "./EventManagementPage";
 
@@ -157,6 +158,7 @@ export default function AdminPanel() {
             <Route path="/admin/crowdfunding/active" component={ActiveCampaignsPage} />
             <Route path="/admin/crowdfunding/completed" component={CompletedCampaignsPage} />
             <Route path="/admin/crowdfunding/donations" component={DonationManagementPage} />
+            <Route path="/admin/crowdfunding/failed" component={FailedDonationsPage} />
             <Route path="/admin/crowdfunding/create" component={CreateCampaignPage} />
             
             {/* Internship Module */}
@@ -176,6 +178,8 @@ export default function AdminPanel() {
             <Route path="/admin/beneficiary/requests" component={BeneficiaryManagementPage} />
             <Route path="/admin/beneficiary/active" component={BeneficiaryManagementPage} />
             <Route path="/admin/beneficiary/inactive" component={BeneficiaryManagementPage} />
+            <Route path="/admin/beneficiary/completed" component={BeneficiaryManagementPage} />
+            <Route path="/admin/beneficiary/rejected" component={BeneficiaryManagementPage} />
             <Route path="/admin/beneficiary/add" component={BeneficiaryManagementPage} />
             
             {/* Fallback */}

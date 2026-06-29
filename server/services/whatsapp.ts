@@ -1,59 +1,48 @@
-﻿import twilio from 'twilio';
+import axios from 'axios';
 
 /**
- * WhatsApp Messaging Service via Twilio API
+ * WhatsApp Messaging Service via AllExpert REST API
  */
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const twilioWhatsAppNumber = process.env.TWILIO_WHATSAPP_NUMBER; // e.g. "whatsapp:+14155238886"
-
-let client: twilio.Twilio | null = null;
-if (accountSid && authToken) {
-  try {
-    client = twilio(accountSid, authToken);
-    console.log("[Twilio] Client initialized successfully.");
-  } catch (error) {
-    console.error("[Twilio] Failed to initialize client:", error);
-  }
-} else {
-  console.log("[Twilio] Credentials missing. Running in MOCK mode.");
-}
+const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || '6a427de1437f3';
+const instanceId = process.env.WHATSAPP_INSTANCE_ID || '609ACF283XXXX';
 
 export const sendWhatsAppMessage = async (phone: string, subject: string, text: string) => {
-  const formattedMessage = `*${subject}*\n\n${text}\n\n_This is an automated message from your NGO Admin._`;
+  const formattedMessage = `*${subject}*\n\n${text}\n\n_This is an automated message from Valmiki Samaj Charitable Trust._`;
 
-  if (!client || !twilioWhatsAppNumber) {
-    // Fallback to Mock service when keys aren't provided
+  // Format phone number to clean digits (no +, spaces or dashes)
+  let cleanNumber = phone.replace(/\D/g, '');
+  if (cleanNumber.length === 10) {
+    cleanNumber = '91' + cleanNumber;
+  }
+
+  // If credentials are in mock mode (using default placeholder / config not customized)
+  // we can still trigger the real API if they have set custom ones, or log it cleanly
+  if (instanceId === '609ACF283XXXX') {
     console.log("=========================================");
-    console.log(`[WhatsApp Mock] Sending message to: ${phone}`);
+    console.log(`[WhatsApp Mock] Sending message to: ${cleanNumber}`);
     console.log(`[WhatsApp Mock] Payload:\n${formattedMessage}`);
     console.log("=========================================");
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 300));
     return { success: true, mock: true };
   }
 
-  // Format phone number to E.164 with whatsapp: prefix if needed
-  // Ensure it starts with a plus, e.g., '+919876543210'
-  let cleanPhone = phone.trim();
-  if (cleanPhone.startsWith('whatsapp:')) {
-    cleanPhone = cleanPhone.replace('whatsapp:', '');
-  }
-  if (!cleanPhone.startsWith('+')) {
-    cleanPhone = '+' + cleanPhone;
-  }
-  const to = `whatsapp:${cleanPhone}`;
-
   try {
-    const message = await client.messages.create({
-      body: formattedMessage,
-      from: twilioWhatsAppNumber,
-      to: to
+    console.log(`[WhatsApp API] Dispatching message to ${cleanNumber}...`);
+    const response = await axios.post('https://button.allexpert.in/api/send', null, {
+      params: {
+        number: cleanNumber,
+        type: "text",
+        message: formattedMessage,
+        instance_id: instanceId,
+        access_token: accessToken
+      }
     });
-    console.log(`[Twilio WhatsApp] Message sent to ${to}. SID: ${message.sid}`);
-    return { success: true, sid: message.sid };
-  } catch (error) {
-    console.error(`[Twilio WhatsApp] Error sending message to ${to}:`, error);
+
+    console.log(`[WhatsApp API] Response:`, response.data);
+    return { success: true, data: response.data };
+  } catch (error: any) {
+    console.error(`[WhatsApp API] Error sending message to ${cleanNumber}:`, error.response?.data || error.message);
     throw error;
   }
 };

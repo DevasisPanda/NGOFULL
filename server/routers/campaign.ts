@@ -12,11 +12,11 @@ export const campaignRouter = router({
     .input(
       z.object({
         title: z.string(),
-        description: z.string(),
+        description: z.string().optional(),
         goalAmount: z.number().min(0),
         startDate: z.date(),
         endDate: z.date(),
-        category: z.string(),
+        category: z.string().optional(),
         campaignType: z.enum(["donation", "volunteer"]).default("donation"),
         whyNeeded: z.string().optional(),
         forWhom: z.string().optional(),
@@ -34,13 +34,13 @@ export const campaignRouter = router({
 
       await db.insert(campaigns).values({
         title: input.title,
-        description: input.description,
+        description: input.description || null,
         campaignType: input.campaignType,
-        whyNeeded: input.whyNeeded,
-        forWhom: input.forWhom,
-        impact: input.impact,
+        whyNeeded: input.whyNeeded || null,
+        forWhom: input.forWhom || null,
+        impact: input.impact || null,
         goalAmount: input.goalAmount.toString(),
-        targetVolunteers: input.targetVolunteers,
+        targetVolunteers: input.targetVolunteers || null,
         raisedAmount: "0",
         campaignImage: input.campaignImage || null,
         startDate: input.startDate,
@@ -59,7 +59,29 @@ export const campaignRouter = router({
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
 
-    return db.select().from(campaigns).orderBy(desc(campaigns.createdAt));
+    return db
+      .select({
+        id: campaigns.id,
+        title: campaigns.title,
+        description: campaigns.description,
+        whyNeeded: campaigns.whyNeeded,
+        forWhom: campaigns.forWhom,
+        impact: campaigns.impact,
+        campaignType: campaigns.campaignType,
+        goalAmount: campaigns.goalAmount,
+        targetVolunteers: campaigns.targetVolunteers,
+        raisedAmount: campaigns.raisedAmount,
+        campaignImage: campaigns.campaignImage,
+        startDate: campaigns.startDate,
+        endDate: campaigns.endDate,
+        status: campaigns.status,
+        createdBy: campaigns.createdBy,
+        createdAt: campaigns.createdAt,
+        updatedAt: campaigns.updatedAt,
+        volunteerCount: sql<number>`(select count(*) from ${campaignVolunteers} where ${campaignVolunteers.campaignId} = ${campaigns.id})`
+      })
+      .from(campaigns)
+      .orderBy(desc(campaigns.createdAt));
   }),
 
   // Get active campaigns
@@ -69,7 +91,26 @@ export const campaignRouter = router({
 
     const now = new Date();
     return db
-      .select()
+      .select({
+        id: campaigns.id,
+        title: campaigns.title,
+        description: campaigns.description,
+        whyNeeded: campaigns.whyNeeded,
+        forWhom: campaigns.forWhom,
+        impact: campaigns.impact,
+        campaignType: campaigns.campaignType,
+        goalAmount: campaigns.goalAmount,
+        targetVolunteers: campaigns.targetVolunteers,
+        raisedAmount: campaigns.raisedAmount,
+        campaignImage: campaigns.campaignImage,
+        startDate: campaigns.startDate,
+        endDate: campaigns.endDate,
+        status: campaigns.status,
+        createdBy: campaigns.createdBy,
+        createdAt: campaigns.createdAt,
+        updatedAt: campaigns.updatedAt,
+        volunteerCount: sql<number>`(select count(*) from ${campaignVolunteers} where ${campaignVolunteers.campaignId} = ${campaigns.id})`
+      })
       .from(campaigns)
       .where(and(eq(campaigns.status, "active"), gt(campaigns.endDate, now)))
       .orderBy(desc(campaigns.createdAt));
@@ -82,7 +123,26 @@ export const campaignRouter = router({
 
     const now = new Date();
     return db
-      .select()
+      .select({
+        id: campaigns.id,
+        title: campaigns.title,
+        description: campaigns.description,
+        whyNeeded: campaigns.whyNeeded,
+        forWhom: campaigns.forWhom,
+        impact: campaigns.impact,
+        campaignType: campaigns.campaignType,
+        goalAmount: campaigns.goalAmount,
+        targetVolunteers: campaigns.targetVolunteers,
+        raisedAmount: campaigns.raisedAmount,
+        campaignImage: campaigns.campaignImage,
+        startDate: campaigns.startDate,
+        endDate: campaigns.endDate,
+        status: campaigns.status,
+        createdBy: campaigns.createdBy,
+        createdAt: campaigns.createdAt,
+        updatedAt: campaigns.updatedAt,
+        volunteerCount: sql<number>`(select count(*) from ${campaignVolunteers} where ${campaignVolunteers.campaignId} = ${campaigns.id})`
+      })
       .from(campaigns)
       .where(or(
         eq(campaigns.status, "completed"), 
