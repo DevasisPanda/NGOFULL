@@ -68,7 +68,9 @@ const INITIAL_TEMPLATES: TemplateConfig[] = [
       { id: 'date', label: 'Date', text: '22/06/2026', x: 706, y: 224, size: 18, color: '#1e293b', weight: 'bold', align: 'right' },
       { id: 'donorName', label: 'Donor Name', text: 'Devasis Panda', x: 217, y: 384, size: 22, color: '#1e293b', weight: 'bold', align: 'left' },
       { id: 'amount', label: 'Amount', text: '₹5,000.00', x: 217, y: 563, size: 24, color: '#115e59', weight: 'bold', align: 'left' },
-      { id: 'purpose', label: 'Purpose', text: 'General Donation', x: 217, y: 723, size: 20, color: '#1e293b', weight: 'bold', align: 'left' }
+      { id: 'purpose', label: 'Purpose', text: 'General Donation', x: 217, y: 723, size: 20, color: '#1e293b', weight: 'bold', align: 'left' },
+      { id: 'paymentMethod', label: 'Payment Method', text: 'UPI (devasis@okaxis)', x: 217, y: 795, size: 18, color: '#1e293b', weight: 'bold', align: 'left' },
+      { id: 'transactionId', label: 'Transaction ID', text: 'pay_P1o3uE2y7t', x: 217, y: 865, size: 18, color: '#1e293b', weight: 'bold', align: 'left' }
     ]
   },
   {

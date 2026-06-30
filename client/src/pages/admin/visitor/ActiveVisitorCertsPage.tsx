@@ -311,12 +311,7 @@ export default function ActiveVisitorCertsPage() {
                 dbTemplates={dbTemplates}
                 cardRef={visitorRef}
                 className="max-w-lg mx-auto rounded-lg"
-              >
-                {/* Photo Overlay Placeholder */}
-                <div className="absolute top-[41.5%] left-[23%] -translate-x-1/2 w-[16%] aspect-[1/1] rounded-xl overflow-hidden shadow-sm bg-white border border-gray-100 flex items-center justify-center">
-                  <UserCheck className="w-[8cqw] h-[8cqw] text-teal-800 opacity-60" />
-                </div>
-              </VerifiableDocument>
+              />
             )}
           </div>
 

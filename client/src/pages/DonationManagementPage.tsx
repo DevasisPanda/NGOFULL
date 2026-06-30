@@ -75,6 +75,10 @@ export default function DonationManagementPage() {
   const { data: allDonationsData, isLoading: isAllLoading } = trpc.donation.getAll.useQuery({ page: 1, pageSize: 1000 }, { enabled: user?.role === "admin" });
   const { data: stats } = trpc.donation.getStats.useQuery(undefined, { enabled: user?.role === "admin" });
   const { data: dbTemplates } = trpc.document.getTemplateConfigs.useQuery();
+  const { data: receiptDetails, isLoading: isReceiptLoading } = trpc.donation.getDonationReceiptDetails.useQuery(
+    { donationId: selectedReceiptDonation?.id },
+    { enabled: !!selectedReceiptDonation?.id }
+  );
 
   // Mutations
   const createDonationMutation = trpc.donation.create.useMutation({
@@ -873,8 +877,29 @@ export default function DonationManagementPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-4 flex justify-center">
-            {selectedReceiptDonation && (
+          <div className="py-4 flex justify-center min-h-[220px] items-center">
+            {isReceiptLoading ? (
+              <div className="flex flex-col items-center gap-2 py-8">
+                <span className="material-symbols-outlined animate-spin text-4xl text-teal-700">sync</span>
+                <span className="text-sm text-gray-500 font-medium">Fetching verified billing details...</span>
+              </div>
+            ) : receiptDetails ? (
+              <VerifiableDocument
+                templateId="donation"
+                fieldValues={{
+                  receiptNumber: receiptDetails.receiptNumber,
+                  date: receiptDetails.createdAt ? format(new Date(receiptDetails.createdAt), "dd-MM-yyyy") : "",
+                  donorName: receiptDetails.donorName || "Valued Donor",
+                  amount: `₹${parseFloat(receiptDetails.amount).toLocaleString("en-IN")}`,
+                  purpose: receiptDetails.purpose || "General NGO Fund",
+                  paymentMethod: receiptDetails.paymentMethod || "ONLINE",
+                  transactionId: receiptDetails.transactionId || receiptDetails.receiptNumber,
+                }}
+                dbTemplates={dbTemplates}
+                cardRef={receiptRef}
+                className="max-w-[320px] mx-auto rounded-xl"
+              />
+            ) : selectedReceiptDonation ? (
               <VerifiableDocument
                 templateId="donation"
                 fieldValues={{
@@ -882,18 +907,21 @@ export default function DonationManagementPage() {
                   date: selectedReceiptDonation.createdAt ? format(new Date(selectedReceiptDonation.createdAt), "dd-MM-yyyy") : "",
                   donorName: selectedReceiptDonation.donorName || "Valued Donor",
                   amount: `₹${parseFloat(selectedReceiptDonation.amount).toLocaleString("en-IN")}`,
-                  purpose: selectedReceiptDonation.purpose || "General NGO Fund"
+                  purpose: selectedReceiptDonation.purpose || "General NGO Fund",
+                  paymentMethod: selectedReceiptDonation.donationType?.toUpperCase() || "ONLINE",
+                  transactionId: selectedReceiptDonation.transactionId || selectedReceiptDonation.receiptNumber,
                 }}
                 dbTemplates={dbTemplates}
                 cardRef={receiptRef}
                 className="max-w-[320px] mx-auto rounded-xl"
               />
-            )}
+            ) : null}
           </div>
 
-          <DialogFooter className="pt-2 border-t">
-            <Button className="w-full bg-[#061941] hover:bg-black text-white" onClick={() => setIsReceiptModalOpen(false)}>
-              Close Receipt
+          <DialogFooter className="pt-2 border-t flex gap-2 w-full">
+            <CaptureActions cardRef={receiptRef} filename={`Donation_Receipt_${selectedReceiptDonation?.receiptNumber || "receipt"}`} />
+            <Button variant="outline" className="text-gray-700 bg-white" onClick={() => setIsReceiptModalOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

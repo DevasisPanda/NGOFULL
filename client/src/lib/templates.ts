@@ -97,6 +97,8 @@ export const DONATION_RECEIPT_TEMPLATE: TemplateConfig = {
     { id: "donorName", label: "Donor Name", text: "", x: 217, y: 384, size: 22, color: "#1e293b", weight: "bold", align: "left" },
     { id: "amount", label: "Amount", text: "", x: 217, y: 563, size: 24, color: "#115e59", weight: "bold", align: "left" },
     { id: "purpose", label: "Purpose", text: "", x: 217, y: 723, size: 20, color: "#1e293b", weight: "bold", align: "left" },
+    { id: "paymentMethod", label: "Payment Method", text: "", x: 217, y: 795, size: 18, color: "#1e293b", weight: "bold", align: "left" },
+    { id: "transactionId", label: "Transaction ID", text: "", x: 217, y: 865, size: 18, color: "#1e293b", weight: "bold", align: "left" },
   ],
 };
 

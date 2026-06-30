@@ -53,7 +53,11 @@ export function useCapture(filename: string = "document") {
         } else {
           // Use PNG (lossless) for PDF sharpness
           const imgData = canvas.toDataURL("image/png");
-          const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [canvas.width, canvas.height] });
+          const pdf = new jsPDF({
+            orientation: canvas.width > canvas.height ? "landscape" : "portrait",
+            unit: "px",
+            format: [canvas.width, canvas.height]
+          });
           pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
           pdf.save(`${filename}.pdf`);
           toast.success(`PDF saved as ${filename}.pdf`);
@@ -108,7 +112,11 @@ export function CaptureActions({ cardRef, filename = "document", className = "" 
         toast.success(`JPG saved as ${filename}.jpg`);
       } else {
         const imgData = canvas.toDataURL("image/jpeg", 0.95);
-        const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [canvas.width, canvas.height] });
+        const pdf = new jsPDF({
+          orientation: canvas.width > canvas.height ? "landscape" : "portrait",
+          unit: "px",
+          format: [canvas.width, canvas.height]
+        });
         pdf.addImage(imgData, "JPEG", 0, 0, canvas.width, canvas.height);
         pdf.save(`${filename}.pdf`);
         toast.success(`PDF saved as ${filename}.pdf`);

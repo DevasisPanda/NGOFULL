@@ -30,6 +30,17 @@ export default function MemberDetailsPage() {
     }
   });
 
+  // Generate ID Card mutation
+  const generateIDCardMutation = trpc.document.generateIDCard.useMutation({
+    onSuccess: () => {
+      utils.document.getIDCards.invalidate({ memberId: member?.id });
+      toast.success("ID Card generated successfully!");
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to generate ID Card");
+    }
+  });
+
   // Queries
   const { data: member, isLoading } = trpc.membership.getMemberDetails.useQuery(
     { userId },
@@ -164,17 +175,23 @@ export default function MemberDetailsPage() {
                 >
                   <Award className="w-3 h-3" /> Membership Certificate
                 </Button>
-                <Button 
+                 <Button 
                   className="bg-teal-600 hover:bg-teal-700 text-white text-xs h-8 px-2 flex items-center justify-center gap-1"
                   onClick={() => {
                     if (latestIDCard) {
                       setIsIDCardModalOpen(true);
                     } else {
-                      toast.error("No ID Card has been generated for this member yet.");
+                      if (window.confirm("No ID Card has been generated for this member yet. Would you like to generate it now?")) {
+                        generateIDCardMutation.mutate({
+                          memberId: member.id,
+                          designation: member.designation || "Trust Member",
+                        });
+                      }
                     }
                   }}
+                  disabled={generateIDCardMutation.isPending}
                 >
-                  <CreditCard className="w-3 h-3" /> ID Card
+                  <CreditCard className="w-3 h-3" /> {generateIDCardMutation.isPending ? "Generating..." : "ID Card"}
                 </Button>
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -460,7 +477,7 @@ export default function MemberDetailsPage() {
                 className="max-w-lg mx-auto rounded-lg"
               >
                 {/* Profile Photo Overlay */}
-                <div className="absolute top-[41.5%] left-[23%] -translate-x-1/2 w-[16%] aspect-[1/1] rounded-xl overflow-hidden shadow-sm bg-white border border-gray-100 flex items-center justify-center">
+                <div className="absolute top-[39.3%] left-[18.7%] -translate-x-1/2 w-[11.5%] aspect-[1/1] rounded-xl overflow-hidden shadow-sm bg-white border border-gray-100 flex items-center justify-center">
                   {member.user?.profileImage ? (
                     <img src={member.user.profileImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (

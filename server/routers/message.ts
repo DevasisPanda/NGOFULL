@@ -127,4 +127,20 @@ export const messageRouter = router({
       .where(eq(messages.senderId, ctx.user.id))
       .orderBy(desc(messages.createdAt));
   }),
+
+  deleteMessage: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      try {
+        // Delete related recipient records for bulk messages first
+        await db.delete(bulkMessageRecipients).where(eq(bulkMessageRecipients.messageId, input.id));
+        await db.delete(messages).where(eq(messages.id, input.id));
+        return { success: true, message: "Message deleted successfully." };
+      } catch (error) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Failed to delete message: ${error}` });
+      }
+    }),
 });

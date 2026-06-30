@@ -36,6 +36,9 @@ export default function MemberDashboard() {
   const [selectedReceiptDonation, setSelectedReceiptDonation] = useState<any>(null);
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const appointmentRef = useRef<HTMLDivElement>(null);
+  const receiptRef = useRef<HTMLDivElement>(null);
+  const certificateRef = useRef<HTMLDivElement>(null);
+  const idCardRef = useRef<HTMLDivElement>(null);
 
   // Donation form states
   const [donationAmount, setDonationAmount] = useState("");
@@ -664,10 +667,11 @@ export default function MemberDashboard() {
                   expiryDate: myIDCard.expiryDate ? new Date(myIDCard.expiryDate).toLocaleDateString() : "Lifetime",
                 }}
                 dbTemplates={dbTemplates}
+                cardRef={idCardRef}
                 className="max-w-[280px] mx-auto rounded-2xl"
               >
                 {/* Profile Photo Overlay */}
-                <div className="absolute top-[41.5%] left-[23%] -translate-x-1/2 w-[16%] aspect-[1/1] rounded-xl overflow-hidden border border-gray-100 shadow bg-white flex items-center justify-center">
+                <div className="absolute top-[39.3%] left-[18.7%] -translate-x-1/2 w-[11.5%] aspect-[1/1] rounded-xl overflow-hidden border border-gray-100 shadow bg-white flex items-center justify-center">
                   {profile?.profileImage ? (
                     <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
@@ -680,9 +684,10 @@ export default function MemberDashboard() {
             )}
           </div>
 
-          <DialogFooter className="pt-2 border-t">
-            <Button className="w-full bg-teal-700 hover:bg-teal-800 text-white" onClick={() => setIsIDCardModalOpen(false)}>
-              Close Card
+          <DialogFooter className="pt-2 border-t flex gap-2 w-full">
+            <CaptureActions cardRef={idCardRef} filename={`ID_Card_${profile?.name?.replace(/\s+/g, "_") || "member"}`} />
+            <Button variant="outline" className="text-gray-700 bg-white" onClick={() => setIsIDCardModalOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -714,18 +719,9 @@ export default function MemberDashboard() {
                     expiryDate: selectedPreviewCert.expiryDate ? new Date(selectedPreviewCert.expiryDate).toLocaleDateString() : "Same Day",
                   }}
                   dbTemplates={dbTemplates}
+                  cardRef={certificateRef}
                   className="max-w-[280px] mx-auto rounded-2xl"
-                >
-                  <div className="absolute top-[41.5%] left-[23%] -translate-x-1/2 w-[16%] aspect-[1/1] rounded-xl overflow-hidden border border-gray-100 shadow bg-white flex items-center justify-center">
-                    {profile?.profileImage ? (
-                      <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-teal-800 text-[3.5cqw] font-bold bg-teal-100">
-                        {profile?.name?.slice(0, 2).toUpperCase() || 'MB'}
-                      </div>
-                    )}
-                  </div>
-                </VerifiableDocument>
+                />
               ) : (
                 <VerifiableDocument
                   templateId={selectedPreviewCert.certificateType}
@@ -745,15 +741,17 @@ export default function MemberDashboard() {
                         }
                   }
                   dbTemplates={dbTemplates}
+                  cardRef={certificateRef}
                   className="max-w-lg mx-auto rounded-lg"
                 />
               )
             )}
           </div>
 
-          <DialogFooter className="pt-2 border-t">
-            <Button className="w-full bg-teal-700 hover:bg-teal-800 text-white" onClick={() => setIsPreviewCertModalOpen(false)}>
-              Close Preview
+          <DialogFooter className="pt-2 border-t flex gap-2 w-full">
+            <CaptureActions cardRef={certificateRef} filename={`Certificate_${selectedPreviewCert?.certificateNumber || "document"}`} />
+            <Button variant="outline" className="text-gray-700 bg-white" onClick={() => setIsPreviewCertModalOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -781,17 +779,21 @@ export default function MemberDashboard() {
                   date: selectedReceiptDonation.createdAt ? new Date(selectedReceiptDonation.createdAt).toLocaleDateString() : "",
                   donorName: profile?.name || "",
                   amount: `₹${parseFloat(selectedReceiptDonation.amount as string || "0").toFixed(2)}`,
-                  purpose: selectedReceiptDonation.purpose || "General NGO Fund"
+                  purpose: selectedReceiptDonation.purpose || "General NGO Fund",
+                  paymentMethod: selectedReceiptDonation.donationType?.toUpperCase() || "ONLINE",
+                  transactionId: selectedReceiptDonation.transactionId || selectedReceiptDonation.receiptNumber,
                 }}
                 dbTemplates={dbTemplates}
+                cardRef={receiptRef}
                 className="max-w-[320px] mx-auto rounded-xl"
               />
             )}
           </div>
 
-          <DialogFooter className="pt-2 border-t">
-            <Button className="w-full bg-teal-700 hover:bg-teal-800 text-white" onClick={() => setIsReceiptModalOpen(false)}>
-              Close Receipt
+          <DialogFooter className="pt-2 border-t flex gap-2 w-full">
+            <CaptureActions cardRef={receiptRef} filename={`Donation_Receipt_${selectedReceiptDonation?.receiptNumber || "receipt"}`} />
+            <Button variant="outline" className="text-gray-700 bg-white" onClick={() => setIsReceiptModalOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

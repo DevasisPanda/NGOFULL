@@ -24,7 +24,7 @@ const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
 
 // Lazily import razorpay (avoids crash when env vars aren't set)
 let razorpayClient: any = null;
-async function getRazorpay() {
+export async function getRazorpay() {
   if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",

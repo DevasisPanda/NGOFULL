@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { CaptureActions } from "@/components/CaptureActions";
-import { ID_CARD_TEMPLATE } from "@/lib/templates";
+import { ID_CARD_TEMPLATE, mergeTemplates } from "@/lib/templates";
+import { VerifiableDocument } from "@/components/VerifiableDocument";
 import { format } from "date-fns";
 import { Eye, UserCheck, Calendar } from "lucide-react";
 
@@ -26,11 +27,15 @@ export default function GenerateVisitorCertPage() {
   const previewRef = useRef<HTMLDivElement>(null);
   const utils = trpc.useUtils();
 
+  const { data: dbTemplates } = trpc.document.getTemplateConfigs.useQuery();
+  const mergedTemplates = mergeTemplates(dbTemplates);
+
   const generateMutation = trpc.document.generateCertificate.useMutation({
     onSuccess: () => {
       toast.success("Visitor certificate generated successfully!");
+      const visitorTemplate = mergedTemplates.find(t => t.id === "id_card") || ID_CARD_TEMPLATE;
       setPreview({
-        template: ID_CARD_TEMPLATE,
+        template: visitorTemplate,
         fieldValues: {
           fullName: formData.fullName || "Visitor",
           designation: formData.designation || "Visitor",
@@ -134,38 +139,27 @@ export default function GenerateVisitorCertPage() {
               <Eye className="w-5 h-5" />
               Visitor Pass Preview
             </DialogTitle>
+            <DialogDescription>
+              Official pass issued for temporary visitors.
+            </DialogDescription>
           </DialogHeader>
 
           {preview && (
-            <div className="py-4">
-              <div ref={previewRef} className="relative w-full max-w-md mx-auto overflow-hidden rounded-lg border border-gray-200 shadow-md">
-                <img src={preview.template.src} alt="ID Card Template" className="w-full h-auto" crossOrigin="anonymous" />
-                {preview.template.fields.map((field: any) => {
-                  const val = preview.fieldValues[field.id];
-                  if (!val) return null;
-                  const style: React.CSSProperties = {
-                    position: "absolute",
-                    left: `${(field.x / preview.template.imgWidth) * 100}%`,
-                    top: `${(field.y / preview.template.imgHeight) * 100}%`,
-                    fontSize: `${field.size}px`,
-                    color: field.color,
-                    fontWeight: field.weight,
-                    textAlign: field.align,
-                    transform: field.align === "center" ? "translateX(-50%)" : field.align === "right" ? "translateX(-100%)" : undefined,
-                    whiteSpace: "nowrap",
-                    lineHeight: 1.2,
-                    pointerEvents: "none",
-                  };
-                  return <span key={field.id} style={style}>{val}</span>;
-                })}
-              </div>
+            <div className="py-4 flex justify-center">
+              <VerifiableDocument
+                templateId="id_card"
+                fieldValues={preview.fieldValues}
+                dbTemplates={dbTemplates}
+                cardRef={previewRef}
+                className="max-w-[320px] mx-auto rounded-xl"
+              />
             </div>
           )}
 
-          <div className="flex gap-2 justify-end pt-3 border-t">
+          <DialogFooter className="flex gap-2 justify-end pt-3 border-t">
             <CaptureActions cardRef={previewRef} filename="Visitor_Pass" />
             <Button variant="outline" onClick={() => setPreview(null)}>Close</Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -1,5 +1,5 @@
-import React from "react";
-import { getTemplate, type TemplateConfig } from "@/lib/templates";
+import React, { useEffect, useRef } from "react";
+import { getTemplate } from "@/lib/templates";
 
 interface VerifiableDocumentProps {
   templateId: string;
@@ -20,6 +20,19 @@ export function VerifiableDocument({
 }: VerifiableDocumentProps) {
   // 1. Get static template
   const staticTpl = getTemplate(templateId);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Sync refs
+  useEffect(() => {
+    if (!cardRef) return;
+    if (typeof cardRef === "function") {
+      (cardRef as any)(containerRef.current);
+    } else {
+      (cardRef as React.MutableRefObject<HTMLDivElement | null>).current = containerRef.current;
+    }
+  });
+
   if (!staticTpl) {
     return (
       <div className="p-4 text-red-500 font-bold border border-red-200 bg-red-50 rounded">
@@ -51,120 +64,57 @@ export function VerifiableDocument({
     }
   }
 
-  // Calculate aspect ratio
-  const aspect = template.imgWidth && template.imgHeight ? `${template.imgWidth}/${template.imgHeight}` : "auto";
+  // Redraw canvas whenever template or fieldValues change
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-  // Use localRef and sync with cardRef
-  const localRef = React.useRef<HTMLDivElement>(null);
-  React.useEffect(() => {
-    if (!cardRef) return;
-    if (typeof cardRef === "function") {
-      (cardRef as any)(localRef.current);
-    } else {
-      (cardRef as React.MutableRefObject<HTMLDivElement | null>).current = localRef.current;
-    }
-  });
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.src = template.src;
+    image.onload = () => {
+      const imgWidth = template.imgWidth || image.naturalWidth || image.width || 1200;
+      const imgHeight = template.imgHeight || image.naturalHeight || image.height || 850;
 
-  // Track container width for exact font-size scaling in pixels
-  const [containerWidth, setContainerWidth] = React.useState<number>(0);
+      canvas.width = imgWidth;
+      canvas.height = imgHeight;
+      
+      // Draw background
+      ctx.drawImage(image, 0, 0, imgWidth, imgHeight);
 
-  React.useEffect(() => {
-    const el = localRef.current;
-    if (!el) return;
+      // Draw each field
+      template.fields.forEach((field) => {
+        const val = fieldValues[field.id];
+        if (val === undefined || val === null || val === "") return;
 
-    const updateWidth = () => {
-      setContainerWidth(el.getBoundingClientRect().width || el.offsetWidth || template.imgWidth);
+        ctx.font = `${field.weight === "bold" ? "bold" : "normal"} ${field.size}px Roboto, 'Open Sans', 'Inter', sans-serif`;
+        ctx.fillStyle = field.color;
+        ctx.textAlign = field.align;
+        ctx.textBaseline = "middle";
+
+        const lines = val.split("\n");
+        lines.forEach((line, index) => {
+          ctx.fillText(line, field.x, field.y + index * field.size * 1.2);
+        });
+      });
     };
-
-    updateWidth();
-
-    const observer = new ResizeObserver(() => {
-      updateWidth();
-    });
-
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-    };
-  }, [template.imgWidth]);
-
-  const activeWidth = containerWidth || template.imgWidth;
-  const scaleFactor = activeWidth / template.imgWidth;
+  }, [template, fieldValues]);
 
   return (
     <div
-      ref={localRef}
-      className={`relative w-full overflow-hidden select-none ${className}`}
+      ref={containerRef}
+      className={`relative w-full overflow-hidden select-none bg-white ${className}`}
       style={{
-        aspectRatio: aspect,
-        backgroundColor: "#ffffff",
+        aspectRatio: template.imgWidth && template.imgHeight ? `${template.imgWidth}/${template.imgHeight}` : "auto",
       }}
     >
-      <img
-        src={template.src}
-        alt={template.name}
-        className="w-full h-full object-cover pointer-events-none absolute inset-0"
-        crossOrigin="anonymous"
+      <canvas
+        ref={canvasRef}
+        className="w-full h-auto object-contain bg-white block"
+        style={{ display: "block", width: "100%", height: "auto" }}
       />
-      
-      {/* Absolute Scaling Overlay Layer */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          width: "100%",
-          height: "100%",
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            width: `${template.imgWidth}px`,
-            height: `${template.imgHeight}px`,
-            left: 0,
-            top: 0,
-            transform: `scale(${scaleFactor})`,
-            transformOrigin: "top left",
-            pointerEvents: "none",
-          }}
-        >
-          {template.fields.map((field) => {
-            const val = fieldValues[field.id];
-            if (val === undefined || val === null || val === "") return null;
-
-            const lines = val.split("\n");
-
-            const style: React.CSSProperties = {
-              position: "absolute",
-              left: `${field.x}px`,
-              top: `${field.y}px`,
-              fontSize: `${field.size}px`,
-              color: field.color,
-              fontWeight: field.weight === "bold" ? "bold" : "normal",
-              fontFamily: "Roboto, 'Open Sans', 'Inter', sans-serif",
-              textAlign: field.align,
-              transform:
-                field.align === "center"
-                  ? "translate(-50%, -50%)"
-                  : field.align === "right"
-                  ? "translate(-100%, -50%)"
-                  : "translate(0, -50%)",
-              whiteSpace: "nowrap",
-              lineHeight: 1.2,
-              pointerEvents: "none",
-            };
-
-            return (
-              <span key={field.id} style={style}>
-                {lines.map((line, idx) => (
-                  <span key={idx} style={{ display: idx > 0 ? "block" : "inline" }}>
-                    {line}
-                  </span>
-                ))}
-              </span>
-            );
-          })}
-        </div>
-      </div>
       {children}
     </div>
   );

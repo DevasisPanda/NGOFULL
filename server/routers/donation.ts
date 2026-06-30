@@ -287,4 +287,67 @@ export const donationRouter = router({
 
       return { success: true, message: "Donation entry deleted successfully" };
     }),
+
+  // Get live receipt details (with Razorpay integration)
+  getDonationReceiptDetails: adminProcedure
+    .input(z.object({ donationId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const donationRec = await db
+        .select()
+        .from(donations)
+        .where(eq(donations.id, input.donationId))
+        .limit(1);
+
+      if (donationRec.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Donation record not found" });
+      }
+
+      const donation = donationRec[0];
+      
+      // Default to database values
+      let paymentMethod = donation.donationType.toUpperCase();
+      let transactionId = donation.transactionId || donation.receiptNumber;
+
+      if (donation.donationType === "online" && donation.transactionId && donation.transactionId.startsWith("pay_")) {
+        try {
+          const { getRazorpay } = await import("./payment");
+          const razorpay = await getRazorpay();
+          const payment = await razorpay.payments.fetch(donation.transactionId);
+          
+          if (payment) {
+            if (payment.method === "upi") {
+              paymentMethod = `UPI (${payment.vpa || "Unknown"})`;
+            } else if (payment.method === "card") {
+              const card = payment.card;
+              paymentMethod = `Card (${card?.network || "Card"} ending in ${card?.last4 || "****"})`;
+            } else if (payment.method === "netbanking") {
+              paymentMethod = `Netbanking (${payment.bank || "Bank"})`;
+            } else if (payment.method === "wallet") {
+              paymentMethod = `Wallet (${payment.wallet || "Wallet"})`;
+            } else {
+              paymentMethod = `Online (${payment.method || "Razorpay"})`;
+            }
+            transactionId = payment.id;
+          }
+        } catch (error) {
+          console.error("Failed to fetch payment details from Razorpay:", error);
+        }
+      }
+
+      return {
+        id: donation.id,
+        donorName: donation.donorName,
+        donorEmail: donation.donorEmail,
+        donorPhone: donation.donorPhone,
+        amount: donation.amount,
+        purpose: donation.purpose,
+        createdAt: donation.createdAt,
+        receiptNumber: donation.receiptNumber,
+        paymentMethod,
+        transactionId,
+      };
+    }),
 });

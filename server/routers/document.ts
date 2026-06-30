@@ -61,10 +61,30 @@ export const documentRouter = router({
       }
 
       try {
+        const query = db
+          .select({
+            id: idCards.id,
+            memberId: idCards.memberId,
+            cardNumber: idCards.cardNumber,
+            qrCode: idCards.qrCode,
+            issueDate: idCards.issueDate,
+            expiryDate: idCards.expiryDate,
+            status: idCards.status,
+            memberName: users.name,
+            memberEmail: users.email,
+            memberPhone: users.phone,
+            memberCity: users.city,
+            memberProfileImage: users.profileImage,
+            memberDesignation: users.designation,
+          })
+          .from(idCards)
+          .leftJoin(members, eq(idCards.memberId, members.id))
+          .leftJoin(users, eq(members.userId, users.id));
+
         if (input?.memberId) {
-          return await db.select().from(idCards).where(eq(idCards.memberId, input.memberId));
+          return await query.where(eq(idCards.memberId, input.memberId));
         }
-        return await db.select().from(idCards);
+        return await query;
       } catch (error) {
         console.error("Error fetching ID cards:", error);
         throw new TRPCError({
@@ -339,6 +359,28 @@ export const documentRouter = router({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: `Failed to delete certificate: ${error}`,
+        });
+      }
+    }),
+
+  deleteIDCard: adminProcedure
+    .input(z.object({ cardId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database not available",
+        });
+      }
+
+      try {
+        await db.delete(idCards).where(eq(idCards.id, input.cardId));
+        return { success: true };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Failed to delete ID card: ${error}`,
         });
       }
     }),
