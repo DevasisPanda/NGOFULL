@@ -60,44 +60,38 @@ async function startServer() {
         "https://admin.valmikisamajcharitabletrust.org",
       ].map(o => o.replace(/\/$/, ""));
   
-  // In production, strictly match allowed origins
-  if (process.env.NODE_ENV === "production" || process.env.RENDER) {
-    app.use(cors({
-      origin: (origin, callback) => {
-        if (!origin) return callback(null, true);
-        
-        const normalizedOrigin = origin.trim().replace(/\/$/, "");
-        
-        // Match exact or wildcard patterns
-        const isAllowed = allowedOrigins.some(allowed => {
-          if (allowed === normalizedOrigin) return true;
-          if (allowed.includes('*')) {
-            const regex = new RegExp('^' + allowed.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$');
-            return regex.test(normalizedOrigin);
-          }
-          return false;
-        });
-
-        // Automatically allow any vercel.app, onrender.com, or sslip.io domains for preview/internal deployments
-        const isVercelPreview = normalizedOrigin.endsWith(".vercel.app");
-        const isRenderInternal = normalizedOrigin.endsWith(".onrender.com");
-        const isSslipIo = normalizedOrigin.endsWith(".sslip.io");
-
-        if (isAllowed || isVercelPreview || isRenderInternal || isSslipIo) {
-          return callback(null, true);
+  // Configure CORS middleware
+  app.use(cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      
+      const normalizedOrigin = origin.trim().replace(/\/$/, "");
+      
+      // Match exact or wildcard patterns
+      const isAllowed = allowedOrigins.some(allowed => {
+        if (allowed === normalizedOrigin) return true;
+        if (allowed.includes('*')) {
+          const regex = new RegExp('^' + allowed.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$');
+          return regex.test(normalizedOrigin);
         }
+        return false;
+      });
 
-        console.warn(`[CORS Blocked] Request from origin "${origin}" was rejected. Allowed origins are:`, allowedOrigins);
-        callback(new Error("Not allowed by CORS"));
-      },
-      credentials: true,
-    }));
-  } else {
-    app.use(cors({
-      origin: true,
-      credentials: true,
-    }));
-  }
+      // Automatically allow any vercel.app, onrender.com, sslip.io, or localhost domain
+      const isVercelPreview = normalizedOrigin.endsWith(".vercel.app");
+      const isRenderInternal = normalizedOrigin.endsWith(".onrender.com");
+      const isSslipIo = normalizedOrigin.endsWith(".sslip.io");
+      const isLocalhost = normalizedOrigin.includes("localhost") || normalizedOrigin.includes("127.0.0.1");
+
+      if (isAllowed || isVercelPreview || isRenderInternal || isSslipIo || isLocalhost) {
+        return callback(null, true);
+      }
+
+      console.warn(`[CORS Blocked] Request from origin "${origin}" was rejected.`);
+      callback(null, false);
+    },
+    credentials: true,
+  }));
   const server = createServer(app);
   
   // Configure body parser with 10MB limit for base64 image uploads
