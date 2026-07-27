@@ -127,6 +127,9 @@ function AdminRoute({ component: Component }: { component: React.ComponentType }
         setLocation("/member-dashboard");
       }
     } else if (meQuery.isError) {
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("token");
+      localStorage.removeItem("userRole");
       setLocation("/login");
     }
   }, [meQuery.isSuccess, meQuery.isError, meQuery.data, setLocation]);
@@ -134,15 +137,15 @@ function AdminRoute({ component: Component }: { component: React.ComponentType }
   if (meQuery.isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-slate-50">
-        <div className="relative w-12 h-12 flex items-center justify-center">
-          <div className="absolute inset-0 border-2 border-[#061941]/20 rounded-xl animate-odd-glow"></div>
-          <div className="w-8 h-8 bg-[#061941] border-2 border-[#fed813] shadow-md animate-odd-square"></div>
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+          <p className="text-sm text-slate-500 font-medium">Loading Management Portal...</p>
         </div>
       </div>
     );
   }
 
-  return meQuery.data?.role === "admin" ? <Component /> : null;
+  return meQuery.data?.role === "admin" ? <Component /> : <LoginPage />;
 }
 
 function MemberRoute({ component: Component }: { component: React.ComponentType }) {
@@ -155,7 +158,7 @@ function MemberRoute({ component: Component }: { component: React.ComponentType 
     }
   }, [token, setLocation]);
 
-  return token ? <Component /> : null;
+  return token ? <Component /> : <LoginPage />;
 }
 
 function Router() {
@@ -179,8 +182,8 @@ function Router() {
       <Route path={"/member/donations"} component={() => <MemberRoute component={DonationManagementPage} />} />
       <Route path={"/member/campaigns"} component={() => <MemberRoute component={ActiveCampaignsPage} />} />
 
-      {/* Home - redirect based on auth status */}
-      <Route path={"/"} component={token ? (role === "admin" ? AdminPanel : MemberDashboard) : Home} />
+      {/* Home - default to Login if not logged in, or Admin/Member if logged in */}
+      <Route path={"/"} component={token ? (role === "admin" ? AdminPanel : MemberDashboard) : LoginPage} />
       
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
