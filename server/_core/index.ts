@@ -78,11 +78,12 @@ async function startServer() {
           return false;
         });
 
-        // Automatically allow any vercel.app or onrender.com domains for preview/internal deployments
+        // Automatically allow any vercel.app, onrender.com, or sslip.io domains for preview/internal deployments
         const isVercelPreview = normalizedOrigin.endsWith(".vercel.app");
         const isRenderInternal = normalizedOrigin.endsWith(".onrender.com");
+        const isSslipIo = normalizedOrigin.endsWith(".sslip.io");
 
-        if (isAllowed || isVercelPreview || isRenderInternal) {
+        if (isAllowed || isVercelPreview || isRenderInternal || isSslipIo) {
           return callback(null, true);
         }
 
