@@ -37,10 +37,17 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
+const getApiUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (!envUrl) return "/api/trpc";
+  const trimmed = envUrl.trim().replace(/\/$/, "");
+  return trimmed.endsWith("/api/trpc") ? trimmed : `${trimmed}/api/trpc`;
+};
+
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
-      url: import.meta.env.VITE_API_URL || "/api/trpc",
+      url: getApiUrl(),
       transformer: superjson,
       fetch(input, init) {
         const token = typeof window !== "undefined" ? (localStorage.getItem("authToken") || localStorage.getItem("token")) : null;
