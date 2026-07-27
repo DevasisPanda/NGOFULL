@@ -1,5 +1,4 @@
-# Stage 1: Build application
-FROM node:20-alpine AS builder
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -11,31 +10,17 @@ COPY package.json pnpm-lock.yaml ./
 COPY patches/ ./patches/
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
-# Copy source and build
+# Copy application source
 COPY . .
+
+# Build application
 RUN pnpm build
-
-# Stage 2: Lightweight production runner
-FROM node:20-alpine AS runner
-
-WORKDIR /app
-
-# Enable corepack for pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-# Copy package files and build output
-COPY package.json pnpm-lock.yaml ./
-COPY patches/ ./patches/
-COPY --from=builder /app/dist ./dist
-
-# Install production dependencies only
-RUN pnpm install --prod --frozen-lockfile
 
 EXPOSE 5000
 
 ENV PORT=5000
 ENV NODE_ENV=production
 
-CMD ["node", "dist/index.js"]
+CMD ["pnpm", "start"]
