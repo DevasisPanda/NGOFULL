@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-export function useFadeInOnScroll() {
+export function useFadeInOnScroll(deps: any[] = []) {
   useEffect(() => {
     const observerOptions = {
       threshold: 0.1,
@@ -20,5 +20,5 @@ export function useFadeInOnScroll() {
     return () => {
       fadeElems.forEach((el) => observer.unobserve(el));
     };
-  }, []);
+  }, deps);
 }

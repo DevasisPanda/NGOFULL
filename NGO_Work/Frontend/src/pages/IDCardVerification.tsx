@@ -1,20 +1,12 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { trpc } from '../lib/trpc';
-import { ShieldCheck, XCircle, CreditCard, Calendar, Printer, ArrowLeft } from 'lucide-react';
-
-import { Download } from 'lucide-react';
+import { ShieldCheck, XCircle, CreditCard, Calendar, Printer, ArrowLeft, Download } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-
-import generateIdTemplate from '../assets/generate Id .jpeg';
-const LocalButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ children, className, ...props }) => (
-  <button className={`px-6 py-2.5 rounded-full font-bold text-sm transition-colors cursor-pointer ${className}`} {...props}>
-    {children}
-  </button>
-);
+import { VerifiableDocument } from '../components/VerifiableDocument';
 
 const IDCardVerification: React.FC = () => {
   const { code } = useParams<{ code: string }>();
@@ -24,6 +16,8 @@ const IDCardVerification: React.FC = () => {
     { qrCode: code || "" },
     { enabled: !!code }
   );
+
+  const { data: dbTemplates } = trpc.document.getTemplateConfigs.useQuery();
 
   const cardRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -63,7 +57,7 @@ const IDCardVerification: React.FC = () => {
     );
   }
 
-  if (error || !verResult) {
+  if (error || !verResult || !verResult.member) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-red-100 text-center">
@@ -82,7 +76,6 @@ const IDCardVerification: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-100 to-slate-50 py-12 px-4 sm:px-6 lg:px-8 flex flex-col justify-center items-center">
-      {/* Verification Status Badge */}
       <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden print:shadow-none print:border-none">
         
         {/* Banner */}
@@ -137,75 +130,35 @@ const IDCardVerification: React.FC = () => {
               <h3 className="w-full font-bold text-slate-700 text-sm uppercase tracking-wider flex items-center gap-2">
                 <CreditCard className="w-4 h-4 text-teal-600" /> Digital Identity Card
               </h3>
-              <div 
-                ref={cardRef}
-                className="relative w-full aspect-[1.5/1] rounded-lg overflow-hidden border border-slate-200 shadow-md bg-white print:m-0 print:border-none print:shadow-none"
-                style={{ fontFamily: "'Arial', sans-serif" }}
-              >
-                {/* Background Template */}
-                <img src={generateIdTemplate} alt="ID Card Template" className="w-full h-full object-contain" crossOrigin="anonymous" />
-                
-                {/* Profile Photo Overlay (Left Half, Center-Left) */}
-                <div className="absolute top-[41.5%] left-[23%] -translate-x-1/2 w-[16%] aspect-[1/1] rounded-xl overflow-hidden shadow-sm bg-white border border-gray-100 flex items-center justify-center">
-                  {member?.profileImage ? (
-                    <img src={member.profileImage} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-teal-800 text-3xl font-bold bg-teal-50">
-                      {member?.name?.slice(0, 2).toUpperCase() || 'MB'}
-                    </div>
-                  )}
-                </div>
-
-                {/* Name Overlay (Over the photo) */}
-                <div className="absolute top-[32%] left-[4.5%] w-[40%] text-center">
-                  <h4 className="font-extrabold text-[12px] sm:text-[16px] text-red-600 uppercase tracking-wide line-clamp-1">
-                    {member?.name}
-                  </h4>
-                </div>
-
-                {/* Left Side Details */}
-                {/* ID No */}
-                <div className="absolute top-[62.5%] left-[28%]">
-                  <span className="font-bold text-[10px] sm:text-[14px] text-slate-800">
-                    {card?.cardNumber}
-                  </span>
-                </div>
-
-                {/* Mobile No */}
-                <div className="absolute top-[67%] left-[17%]">
-                  <span className="font-bold text-[10px] sm:text-[14px] text-slate-800">
-                    N/A
-                  </span>
-                </div>
-
-                {/* Email */}
-                <div className="absolute top-[71%] left-[17%]">
-                  <span className="font-bold text-[10px] sm:text-[14px] text-slate-800 line-clamp-1 w-[150px]">
-                    {member?.email || 'N/A'}
-                  </span>
-                </div>
-
-                {/* City */}
-                <div className="absolute top-[75%] left-[13%]">
-                  <span className="font-bold text-[10px] sm:text-[14px] text-slate-800">
-                    N/A
-                  </span>
-                </div>
-
-                {/* Right Side Details */}
-                {/* Joining Date */}
-                <div className="absolute top-[79.5%] left-[78%]">
-                  <span className="font-bold text-[11px] sm:text-[15px] text-[#0f2454]">
-                    {card?.issueDate ? new Date(card.issueDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') : ""}
-                  </span>
-                </div>
-
-                {/* Validity Date */}
-                <div className="absolute top-[84%] left-[78%]">
-                  <span className="font-bold text-[11px] sm:text-[15px] text-[#0f2454]">
-                    {card?.expiryDate ? new Date(card.expiryDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') : "Lifetime"}
-                  </span>
-                </div>
+              
+              <div className="w-full flex justify-center bg-white p-2 border border-slate-100 rounded-2xl shadow-sm">
+                <VerifiableDocument
+                  templateId="id_card"
+                  fieldValues={{
+                    fullName: member?.name || "",
+                    designation: member?.designation || "Trust Member",
+                    cardNumber: card?.cardNumber || "",
+                    mobile: member?.phone || "N/A",
+                    email: member?.email || "N/A",
+                    city: member?.city || "N/A",
+                    issueDate: card?.issueDate ? new Date(card.issueDate).toLocaleDateString() : "",
+                    expiryDate: card?.expiryDate ? new Date(card.expiryDate).toLocaleDateString() : "Lifetime",
+                  }}
+                  dbTemplates={dbTemplates}
+                  cardRef={cardRef}
+                  className="max-w-md w-full rounded-xl"
+                >
+                  {/* Profile Photo Overlay */}
+                  <div className="absolute top-[41.5%] left-[23%] -translate-x-1/2 w-[16%] aspect-[1/1] rounded-xl overflow-hidden shadow-sm bg-white border border-gray-100 flex items-center justify-center">
+                    {member?.profileImage ? (
+                      <img src={member.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-teal-800 text-[3.5cqw] font-bold bg-teal-100">
+                        {member?.name?.slice(0, 2).toUpperCase() || 'MB'}
+                      </div>
+                    )}
+                  </div>
+                </VerifiableDocument>
               </div>
             </div>
           )}

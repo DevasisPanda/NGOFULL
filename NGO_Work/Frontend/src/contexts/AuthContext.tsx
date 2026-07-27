@@ -21,7 +21,7 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token') || localStorage.getItem('authToken'));
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -35,10 +35,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   });
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('action') === 'logout' || params.get('logout') === 'true') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('authToken');
+      setToken(null);
+      setUser(null);
+      // Remove query param from URL so it doesn't keep logging out on refresh
+      const newUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, []);
+
+  useEffect(() => {
     if (token) {
       localStorage.setItem('token', token);
+      localStorage.setItem('authToken', token);
     } else {
       localStorage.removeItem('token');
+      localStorage.removeItem('authToken');
       setUser(null);
     }
   }, [token]);
@@ -67,6 +82,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     utils.clear();
     toast.info("Logged out successfully");
+    
+    // Redirect to dashboard logout endpoint to clear its localStorage too
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    window.location.href = `${apiUrl}/logout-sso?redirect=${encodeURIComponent(window.location.origin)}`;
   };
 
   return (

@@ -239,7 +239,7 @@ const ViewInternship: React.FC = () => {
     <div className="flex-grow bg-[#f8f9fa] pb-20">
       <section 
         className="bg-[#061941] text-white py-20 relative overflow-hidden bg-cover bg-center"
-        style={internship.image ? { backgroundImage: `linear-gradient(rgba(6, 25, 65, 0.85), rgba(6, 25, 65, 0.85)), url(${internship.image})` } : undefined}
+        style={internship.image ? { backgroundImage: `linear-gradient(rgba(6, 25, 65, 0.85), rgba(6, 25, 65, 0.85)), url('${encodeURI(internship.image)}')` } : undefined}
       >
         <div className="container-main px-4 relative z-10">
           <h1 className="text-4xl md:text-5xl font-extrabold text-secondary">{internship.title}</h1>

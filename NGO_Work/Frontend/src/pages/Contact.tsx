@@ -1,5 +1,34 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { trpc } from '../lib/trpc';
+import { trackEvent } from '../utils/analytics';
+
+const faqs = [
+  {
+    question: "How can I become a member of Valmiki Samaj Charitable Trust?",
+    answer: "You can apply for membership directly through our website. Once your application is reviewed and approved, you will receive your Membership Certificate.",
+    linkText: "Apply for Membership",
+    linkUrl: "/register"
+  },
+  {
+    question: "How can I donate to support your causes?",
+    answer: "We accept online donations through our secure payment gateway. Your contributions help us fund education, healthcare, and community awareness programs.",
+    linkText: "Donate Now",
+    linkUrl: "/donate"
+  },
+  {
+    question: "Do you offer internships or volunteer opportunities?",
+    answer: "Yes, we regularly offer internships and volunteer programs. After successful completion, participants receive an official Internship Certificate.",
+    linkText: "Apply for Internship",
+    linkUrl: "/internship"
+  },
+  {
+    question: "How do I apply for beneficiary support?",
+    answer: "If you or someone you know needs assistance regarding healthcare, education, or basic needs, you can submit a beneficiary request online.",
+    linkText: "Apply for Support",
+    linkUrl: "/beneficiary"
+  }
+];
 
 const Contact: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +40,11 @@ const Contact: React.FC = () => {
   });
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const toggleFaq = (index: number) => {
+    setOpenFaq(openFaq === index ? null : index);
+  };
 
   const submitEnquiry = trpc.enquiry.submit.useMutation({
     onSuccess: (data) => {
@@ -32,6 +66,7 @@ const Contact: React.FC = () => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
+    trackEvent('contact_form_submit', { subject: formData.subject || 'no_subject' });
     submitEnquiry.mutate(formData);
   };
 
@@ -86,7 +121,7 @@ const Contact: React.FC = () => {
               <span className="material-symbols-outlined icon-white-lg">mail</span>
             </div>
             <h3 className="text-primary text-2xl font-bold mb-2">Email Us</h3>
-            <p className="text-[#45464e] font-medium text-base break-all">valmikisamajtrust@gmail.com</p>
+            <p className="text-[#45464e] font-medium text-base break-all">valmikisamajchiritabletrust@gmail.com</p>
           </div>
         </div>
       </section>
@@ -101,7 +136,7 @@ const Contact: React.FC = () => {
                 <h2 className="text-primary text-2xl font-extrabold tracking-wide text-center">Contact Us</h2>
               </div>
               <div className="border-2 border-t-0 border-[#e2e2e2] rounded-b-xl overflow-hidden shadow-sm h-[600px]">
-                <iframe allowFullScreen className="w-full h-full grayscale hover:grayscale-0 transition-all duration-700" loading="lazy" referrerPolicy="no-referrer-when-downgrade" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d113911.33230626354!2d80.87114175317663!3d26.848596482161676!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x399bfd991f32b16b%3A0x93ccba8909978be7!2sLucknow%2C%20Uttar%20Pradesh!5e0!3m2!1sen!2sin!4v1711234567890!5m2!1sen!2sin"></iframe>
+                <iframe allowFullScreen className="w-full h-full grayscale hover:grayscale-0 transition-all duration-700" loading="lazy" referrerPolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=23.6136122,73.33269&t=&z=15&ie=UTF8&iwloc=&output=embed"></iframe>
               </div>
             </div>
             {/* Right Column: Enquiry Form */}
@@ -143,7 +178,7 @@ const Contact: React.FC = () => {
                   <label className="form-label" htmlFor="phone">Phone Number</label>
                   <div className="relative">
                     <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-muted">call</span>
-                    <input value={formData.phone} onChange={handleChange} className="w-full pl-10 pr-4 py-3 border-2 border-[#e2e2e2] rounded-lg focus:border-secondary focus:ring-0 outline-none transition-colors" id="phone" placeholder="Enter your phone number" type="tel" />
+                    <input value={formData.phone} onChange={handleChange} className="w-full pl-10 pr-4 py-3 border-2 border-[#e2e2e2] rounded-lg focus:border-secondary focus:ring-0 outline-none transition-colors" id="phone" placeholder="Enter your 10-digit phone number" type="tel" pattern="[0-9]{10}" maxLength={10} title="Phone number must be exactly 10 digits" />
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -168,6 +203,43 @@ const Contact: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* FAQ Section */}
+      <section className="bg-slate-50 py-20">
+        <div className="container-main max-w-4xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-primary text-3xl font-extrabold tracking-tight mb-4">Frequently Asked Questions</h2>
+            <p className="text-[#45464e] font-medium text-lg">Find quick answers to common questions about our NGO.</p>
+          </div>
+          <div className="space-y-4">
+            {faqs.map((faq, index) => (
+              <div key={index} className="bg-white border-2 border-[#e2e2e2] rounded-xl overflow-hidden transition-all shadow-sm hover:border-secondary/50">
+                <button 
+                  onClick={() => toggleFaq(index)}
+                  className="w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none"
+                >
+                  <span className="font-bold text-lg text-[#061941] pr-4">{faq.question}</span>
+                  <span 
+                    className="material-symbols-outlined text-secondary transition-transform duration-300 shrink-0" 
+                    style={{ transform: openFaq === index ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  >
+                    expand_more
+                  </span>
+                </button>
+                <div 
+                  className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${openFaq === index ? 'max-h-48 pb-6 opacity-100' : 'max-h-0 opacity-0'}`}
+                >
+                  <p className="text-[#45464e] font-medium leading-relaxed mb-4">{faq.answer}</p>
+                  <Link to={faq.linkUrl} className="inline-flex items-center gap-1.5 text-secondary font-bold hover:text-[#d67b00] transition-colors border-b border-transparent hover:border-[#d67b00]">
+                    {faq.linkText} <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
     </div>
   );
 };

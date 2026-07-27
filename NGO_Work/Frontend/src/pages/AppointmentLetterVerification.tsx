@@ -3,10 +3,9 @@ import { useParams, Link } from 'react-router-dom';
 import { trpc } from '../lib/trpc';
 import { CheckCircle, XCircle, FileText, Printer, ArrowLeft, Download } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { VerifiableDocument } from '../components/VerifiableDocument';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-
-import appointmentLetterTemplate from '../assets/Appointment letter.jpeg';
 
 const AppointmentLetterVerification: React.FC = () => {
   const { code } = useParams<{ code: string }>();
@@ -16,6 +15,8 @@ const AppointmentLetterVerification: React.FC = () => {
     { qrCode: code || "" },
     { enabled: !!code }
   );
+
+  const { data: dbTemplates } = trpc.document.getTemplateConfigs.useQuery();
 
   const letterRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -96,68 +97,23 @@ const AppointmentLetterVerification: React.FC = () => {
               <FileText className="w-4 h-4 text-indigo-500" /> Digital Appointment Letter
             </h3>
             
-            {/* The Document View */}
-            <div 
-              ref={letterRef}
-              className="relative w-full aspect-[1/1.414] bg-white border border-gray-200 shadow-sm print:m-0 print:border-none print:shadow-none"
-              style={{ fontFamily: "'Times New Roman', Times, serif" }}
-            >
-              <img 
-                src={appointmentLetterTemplate} 
-                alt="Appointment Letter Template" 
-                className="w-full h-full object-contain" 
-                crossOrigin="anonymous"
+            {/* The Dynamic Document View */}
+            <div className="w-full flex justify-center bg-white p-2 border border-slate-100 rounded-2xl shadow-sm">
+              <VerifiableDocument
+                templateId="appointment"
+                fieldValues={{
+                  letterNumber: letter?.letterNumber || "",
+                  name1: letter?.recipientName || "Valued Member",
+                  name2: letter?.recipientName || "Valued Member",
+                  post: letter?.position || "",
+                  mobile: letter?.recipientPhone || "N/A",
+                  fromDate: letter?.appointmentDate ? new Date(letter.appointmentDate).toLocaleDateString() : "",
+                  toDate: "Ongoing"
+                }}
+                dbTemplates={dbTemplates}
+                cardRef={letterRef}
+                className="max-w-md w-full rounded-xl"
               />
-              
-              {/* Dynamic Overlays */}
-              {/* Letter No */}
-              <div className="absolute top-[23%] left-[30%]">
-                <span className="text-[10px] sm:text-[14px] md:text-[16px] text-gray-800 font-bold">
-                  {letter?.letterNumber}
-                </span>
-              </div>
-
-              {/* Mob */}
-              <div className="absolute top-[25.5%] left-[10%]">
-                <span className="text-[10px] sm:text-[14px] md:text-[16px] text-gray-800 font-bold">
-                  N/A
-                </span>
-              </div>
-
-              {/* Mr. Name */}
-              <div className="absolute top-[28%] left-[8%]">
-                <span className="text-[12px] sm:text-[16px] md:text-[18px] text-gray-800 font-bold">
-                  Valued Member {/* We don't have the user name directly in the appointment query currently, fallback */}
-                </span>
-              </div>
-
-              {/* Date From */}
-              <div className="absolute top-[38%] left-[10%]">
-                <span className="text-[10px] sm:text-[14px] md:text-[16px] text-gray-800 font-bold">
-                  {letter?.appointmentDate ? new Date(letter.appointmentDate).toLocaleDateString() : ""}
-                </span>
-              </div>
-
-              {/* Date Till */}
-              <div className="absolute top-[38%] left-[45%]">
-                <span className="text-[10px] sm:text-[14px] md:text-[16px] text-gray-800 font-bold">
-                  Lifetime / Ongoing
-                </span>
-              </div>
-
-              {/* Dear Name */}
-              <div className="absolute top-[48%] left-[12%]">
-                <span className="text-[12px] sm:text-[16px] md:text-[18px] text-gray-800 font-bold">
-                  Valued Member
-                </span>
-              </div>
-
-              {/* Designation */}
-              <div className="absolute top-[48%] left-[65%]">
-                <span className="text-[12px] sm:text-[16px] md:text-[18px] text-gray-800 font-bold">
-                  {letter?.position}
-                </span>
-              </div>
             </div>
           </div>
 

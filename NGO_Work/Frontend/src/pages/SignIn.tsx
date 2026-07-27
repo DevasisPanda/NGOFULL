@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { trpc } from '../lib/trpc';
 import { toast } from 'sonner';
 
@@ -11,6 +11,9 @@ const SignIn: React.FC = () => {
   const [isRedirecting, setIsRedirecting] = useState(false);
   
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as any)?.from?.pathname || "/";
+  
   const createHandoffMutation = trpc.auth.createHandoff.useMutation();
 
   const loginMutation = trpc.auth.login.useMutation({
@@ -22,7 +25,19 @@ const SignIn: React.FC = () => {
       // Request SSO handoff code securely using the newly stored token
       createHandoffMutation.mutate(undefined, {
         onSuccess: (handoffData) => {
-          window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/sso?code=${handoffData.handoffCode}&role=${data.user.role}`;
+          const getApiUrl = () => {
+            if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+            if (typeof window !== 'undefined') {
+              const { hostname, port } = window.location;
+              if ((hostname === 'localhost' || hostname === '127.0.0.1') && port === '5173') {
+                return 'http://localhost:5000';
+              }
+              return window.location.origin;
+            }
+            return 'http://localhost:5000';
+          };
+          const redirectUrl = from !== "/" ? `&redirect=${encodeURIComponent(window.location.origin + from)}` : "";
+          window.location.href = `${getApiUrl()}/sso?code=${handoffData.handoffCode}&role=${data.user.role}${redirectUrl}`;
         },
         onError: (err) => {
           console.error("SSO Handoff generation failed:", err);
@@ -113,7 +128,7 @@ const SignIn: React.FC = () => {
               <input className="h-4 w-4 text-[#061941] border-[#c5c6cf] rounded focus:ring-[#061941]" id="remember-me" name="remember-me" type="checkbox" />
               <label className="ml-2 block text-[12px] font-medium text-[#45464e]" htmlFor="remember-me">Remember me</label>
             </div>
-            <a className="text-[12px] font-medium text-[#061941] hover:text-secondary transition-colors hover:underline" href="#">Forgot Password?</a>
+            <Link className="text-[12px] font-medium text-[#061941] hover:text-secondary transition-colors hover:underline" to="/forgot-password">Forgot Password?</Link>
           </div>
           
           {/* Submit Button */}

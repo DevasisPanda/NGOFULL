@@ -104,6 +104,11 @@
   box-sizing: border-box;
 }
 
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 body {
   margin: 0;
   font-family: var(--font-family);
@@ -117,6 +122,11 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0;
   color: var(--midnight-blue);
   font-weight: 700;
+  font-family: var(--font-family);
+}
+
+button, input, select, textarea {
+  font-family: var(--font-family);
 }
 
 p {
@@ -134,6 +144,8 @@ a {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 main {
@@ -202,5 +214,86 @@ main {
 
 .animate-marquee:hover {
   animation-play-state: paused;
+}
+
+/* Google Translate styling overrides to keep custom look clean */
+iframe.skiptranslate,
+.goog-te-banner-frame,
+.goog-te-banner,
+.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+html {
+  margin-top: 0px !important;
+  padding-top: 0px !important;
+}
+
+body {
+  top: 0px !important;
+  position: static !important;
+}
+
+#goog-gt-tt,
+.goog-te-balloon-frame,
+.goog-tooltip,
+.goog-tooltip:hover {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+.goog-text-highlight {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Odd Rotating Square Loader Animations */
+@keyframes oddSquareRotate {
+  0% {
+    transform: rotate(0deg) scale(1) skew(0deg, 0deg);
+    border-radius: 6px;
+    background-color: #061941;
+  }
+  25% {
+    transform: rotate(105deg) scale(1.2) skew(15deg, -8deg);
+    border-radius: 16px;
+    background-color: #fed813;
+  }
+  50% {
+    transform: rotate(210deg) scale(0.8) skew(-15deg, 15deg);
+    border-radius: 4px;
+    background-color: #ea580c;
+  }
+  75% {
+    transform: rotate(295deg) scale(1.15) skew(8deg, -15deg);
+    border-radius: 20px;
+    background-color: #061941;
+  }
+  100% {
+    transform: rotate(360deg) scale(1) skew(0deg, 0deg);
+    border-radius: 6px;
+    background-color: #061941;
+  }
+}
+
+@keyframes oddPulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(254, 216, 19, 0.4), inset 0 0 10px rgba(6, 25, 65, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(6, 25, 65, 0.6), inset 0 0 15px rgba(254, 216, 19, 0.5);
+  }
+}
+
+.animate-odd-square {
+  animation: oddSquareRotate 1.8s cubic-bezier(0.68, -0.6, 0.32, 1.6) infinite;
+}
+
+.animate-odd-glow {
+  animation: oddPulseGlow 2s ease-in-out infinite;
 }
 

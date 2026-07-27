@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { trpc } from '../lib/trpc';
+import { trackEvent } from '../utils/analytics';
 
 const SignUp: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -31,11 +32,22 @@ const SignUp: React.FC = () => {
     setErrorMsg('');
     setSuccessMsg('');
     
+    if (password.length < 8) {
+      setErrorMsg('Password must be at least 8 characters long');
+      return;
+    }
+    
+    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+      setErrorMsg('Password must contain at least one uppercase letter, one lowercase letter, and one number');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setErrorMsg('Passwords do not match');
       return;
     }
     
+    trackEvent('membership_register');
     registerMutation.mutate({
       name: fullName,
       email: email,
@@ -100,7 +112,7 @@ const SignUp: React.FC = () => {
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <span className="material-symbols-outlined text-[#75777f] text-[20px]">call</span>
               </div>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} className="block w-full pl-[40px] pr-3 py-2 border border-[#c5c6cf] rounded-lg bg-white text-[#1a1c1c] focus:outline-none focus:ring-2 focus:ring-[#061941] focus:border-transparent transition-colors text-[16px] placeholder-muted" id="phone" name="phone" placeholder="Enter your mobile number" required type="tel" />
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} className="block w-full pl-[40px] pr-3 py-2 border border-[#c5c6cf] rounded-lg bg-white text-[#1a1c1c] focus:outline-none focus:ring-2 focus:ring-[#061941] focus:border-transparent transition-colors text-[16px] placeholder-muted" id="phone" name="phone" placeholder="Enter 10-digit mobile number" required type="tel" pattern="[0-9]{10}" maxLength={10} title="Phone number must be exactly 10 digits" />
             </div>
           </div>
           

@@ -1,13 +1,7 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { trpc } from '../lib/trpc';
-import Dream_ProjectImg from '../assets/Dream_Project.jpeg';
-import Wings_of_HopeImg from '../assets/Wings.jpeg';
-
-const imageMap: Record<string, string> = {
-  'Dream_Project.jpeg': Dream_ProjectImg,
-  'Wings.jpeg': Wings_of_HopeImg,
-};
+const imageMap: Record<string, string> = {};
 
 const Projects: React.FC = () => {
   const { data: projects, isLoading } = trpc.project.getAll.useQuery();
@@ -67,11 +61,29 @@ const Projects: React.FC = () => {
                   : 'https://via.placeholder.com/400x300?text=No+Image';
 
                 return (
-                  <div className="card-basic" key={project.id}>
-                    <img alt={project.title} className="card-img" src={imgSrc} />
-                    <div className="card-content">
-                      <h3 className="card-title">{project.title}</h3>
-                      <p className="text-muted-sm whitespace-pre-wrap">{project.description}</p>
+                  <div className="card-basic hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full" key={project.id}>
+                    <Link to={`/project/${project.id}`} className="block overflow-hidden w-full aspect-video relative group bg-slate-100">
+                      <img 
+                        alt={project.title} 
+                        className="card-img w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                        src={imgSrc} 
+                      />
+                      <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-300 pointer-events-none" />
+                    </Link>
+                    
+                    <div className="card-content flex-1 flex flex-col p-6">
+                      <Link to={`/project/${project.id}`} className="hover:text-[#ed8901] transition-colors block mb-3">
+                        <h3 className="text-xl font-bold text-primary">{project.title}</h3>
+                      </Link>
+                      <p className="text-muted-sm whitespace-pre-wrap line-clamp-3 mb-6 flex-grow">{project.description}</p>
+                      
+                      <Link 
+                        to={`/project/${project.id}`} 
+                        className="inline-flex items-center text-secondary font-bold hover:text-primary transition-colors text-sm mt-auto self-start group"
+                      >
+                        Read More 
+                        <span className="material-symbols-outlined text-[18px] ml-1 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                      </Link>
                     </div>
                   </div>
                 );

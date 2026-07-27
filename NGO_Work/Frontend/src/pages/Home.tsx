@@ -1,15 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { trpc } from '../lib/trpc';
-import HomepageImg from '../assets/Homepage.jpeg';
-import Dream_ProjectImg from '../assets/Dream_Project.jpeg';
-import Wings_of_HopeImg from '../assets/Wings.jpeg';
 import { useFadeInOnScroll } from '../hooks/useFadeInOnScroll';
+import { trackButtonClick } from '../utils/analytics';
 
-const imageMap: Record<string, string> = {
-  'Dream_Project.jpeg': Dream_ProjectImg,
-  'Wings.jpeg': Wings_of_HopeImg,
-};
+const imageMap: Record<string, string> = {};
 
 const Home: React.FC = () => {
   const { data: settings } = trpc.homepage.getSettings.useQuery(undefined, {
@@ -46,7 +41,7 @@ const Home: React.FC = () => {
   ].filter(Boolean) as string[];
 
   if (heroSlides.length === 0) {
-    heroSlides.push(HomepageImg);
+    heroSlides.push("https://res.cloudinary.com/dxmovdiru/image/upload/v1782201374/ngo-management/ngikldnfngyuo9suxhpm.jpg");
   }
 
   React.useEffect(() => {
@@ -68,7 +63,7 @@ const Home: React.FC = () => {
     {
       title: settings?.donateSmileTitle || "Dream Project",
       content: settings?.donateSmileContent || "Empower orphaned and vulnerable children at Paradise Child Home with a safe home, quality education, and holistic development for a bright future.",
-      image: settings?.donateSmileImage || Dream_ProjectImg,
+      image: settings?.donateSmileImage || "https://res.cloudinary.com/dxmovdiru/image/upload/v1782201376/ngo-management/jkzrj6we849h5ifwgqfr.jpg",
     },
     {
       title: (settings as any)?.donateSmileTitle2 || "Celebration",
@@ -78,7 +73,7 @@ const Home: React.FC = () => {
     {
       title: (settings as any)?.donateSmileTitle3 || "Wings of Hope",
       content: (settings as any)?.donateSmileContent3 || "Give children the opportunity to learn and grow. Empower them through education, mentorship, and healthcare to achieve their dreams with dignity.",
-      image: (settings as any)?.donateSmileImage3 || Wings_of_HopeImg,
+      image: (settings as any)?.donateSmileImage3 || "https://res.cloudinary.com/dxmovdiru/image/upload/v1782201377/ngo-management/sqod7jftqs0dvtgva9ks.jpg",
     },
     {
       title: (settings as any)?.donateSmileTitle4 || "Education Support",
@@ -142,7 +137,7 @@ const Home: React.FC = () => {
         <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-12 md:px-20 lg:px-28 xl:px-[8%] z-10 text-white">
           {showDonateButton && (
             <div className="mt-6 flex">
-              <Link to="/donate" className="bg-secondary text-primary px-5 py-2.5 sm:px-8 sm:py-3.5 md:px-10 md:py-4 rounded-full font-bold text-xs sm:text-sm md:text-lg hover:bg-[#d67b00] hover:scale-105 transition-all duration-300 shadow-xl border md:border-2 border-white whitespace-nowrap">
+              <Link to="/donate" onClick={() => trackButtonClick('donate_now_hero', '/home')} className="bg-secondary text-primary px-5 py-2.5 sm:px-8 sm:py-3.5 md:px-10 md:py-4 rounded-full font-bold text-xs sm:text-sm md:text-lg hover:bg-[#d67b00] hover:scale-105 transition-all duration-300 shadow-xl border md:border-2 border-white whitespace-nowrap">
                 Donate Now
               </Link>
             </div>
@@ -236,11 +231,29 @@ const Home: React.FC = () => {
                   : 'https://via.placeholder.com/400x300?text=No+Image';
 
                 return (
-                  <div className="bg-[#f8f9fa] rounded-xl shadow-sm border border-[#e2e2e2] hover:shadow-md transition-shadow overflow-hidden flex flex-col" key={project.id}>
-                    <img alt={project.title} className="card-img" src={imgSrc} />
-                    <div className="card-content">
-                      <h3 className="card-title">{project.title}</h3>
-                      <p className="text-muted-sm whitespace-pre-wrap">{project.description}</p>
+                  <div className="bg-[#f8f9fa] rounded-xl shadow-sm border border-[#e2e2e2] hover:shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full overflow-hidden" key={project.id}>
+                    <Link to={`/project/${project.id}`} className="block overflow-hidden h-48 relative group">
+                      <img 
+                        alt={project.title} 
+                        className="card-img w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                        src={imgSrc} 
+                      />
+                      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-300" />
+                    </Link>
+                    
+                    <div className="card-content flex-1 flex flex-col p-6">
+                      <Link to={`/project/${project.id}`} className="hover:text-[#ed8901] transition-colors block mb-3">
+                        <h3 className="text-xl font-bold text-primary">{project.title}</h3>
+                      </Link>
+                      <p className="text-muted-sm whitespace-pre-wrap line-clamp-3 mb-6 flex-grow">{project.description}</p>
+                      
+                      <Link 
+                        to={`/project/${project.id}`} 
+                        className="inline-flex items-center text-secondary font-bold hover:text-primary transition-colors text-sm mt-auto self-start group"
+                      >
+                        Read More 
+                        <span className="material-symbols-outlined text-[18px] ml-1 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                      </Link>
                     </div>
                   </div>
                 );
@@ -306,7 +319,7 @@ const Home: React.FC = () => {
                       <div className="p-6 flex-1 flex flex-col">
                         <h3 className="text-xl font-bold text-primary mb-3">{card.title}</h3>
                         <p className="text-sm text-muted mb-6 flex-1 line-clamp-4">{card.content}</p>
-                        <Link to="/donate" className="bg-secondary text-primary text-center py-3 rounded-lg font-bold text-sm hover:bg-[#d67b00] transition-colors mt-auto block">
+                        <Link to="/donate" onClick={() => trackButtonClick(`donate_card_${card.title}`, '/home')} className="bg-secondary text-primary text-center py-3 rounded-lg font-bold text-sm hover:bg-[#d67b00] transition-colors mt-auto block">
                           Donate Now
                         </Link>
                       </div>

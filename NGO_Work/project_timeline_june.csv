@@ -1,0 +1,31 @@
+﻿Date,Summary of Requests,Key Achievements / Resolved Issues
+06-01-26,Figma Stitch Workspace Preparation,"Initial requirement gathering, analysis of the Stitch designs, and setting up workspace structures."
+06-02-26,Stitch Figma Designs Mapping,"Reviewed color tokens (saffron/navy), typography schemas, and page assets for the public website."
+06-03-26,Requirements Finalization,Mapped out backend API requirements against the public frontend pages structure.
+06-04-26,Initial Repository Setup,Cloned backend service database schemas and organized backend folders for frontend integration.
+06-05-26,Figma Components Analysis,"Analyzed goals, certifications, and gallery pages components inside Stitch."
+06-06-26,Staging Environment Planning,Planned SSO authorization handshake and local database mock configurations.
+06-07-26,Frontend Workspace Initialization,"Setup React Frontend subfolder. Synchronized public pages with Stitch Figma favorite exports. Created layout templates for Home, Gallery, and Mission."
+06-08-26,UI Layout Standardization,Implemented global CSS colors and fonts. Created page transitions. Adjusted padding for cards. Separable sections for Programs and Events.
+06-09-26,Internal UI Feedback and Review,Reviewed header dropdown navigations and adjusted sidebar layouts.
+06-10-26,Desktop Navigation Refinement,Squeezed layout menus gap spacing to prevent layout wrapping.
+06-11-26,Homepage Updating & Vercel Configuration,Replaced Homepage hero assets. Fixed TypeScript errors in tRPC paths. Configured Vercel deployment rewrite rules.
+06-12-26,Database Integration Staging,Staged database connectivity settings. Reviewed users schema and enum role types.
+06-13-26,Database Seeding Strategy,Formulated migration path to wipe dev test entries and seed new administration data.
+06-14-26,SSO Authentication Design,Designed secure SSO Handoff exchange protocol to avoid credentials exposure in Vercel client-side URLs.
+06-15-26,Database Seeding & Cloudinary Integration,Reset database tables. Seeded Super Admin into database users. Integrated Cloudinary storage APIs for image upload procedures.
+06-16-26,Cloudinary API Staging,Tested base64 media stream uploads to Cloudinary storage buckets.
+06-17-26,Admin Panel Layout Alignments,Synchronized sidebar links. Adjusted layout widths for mobile responsiveness.
+06-18-26,System Users Roles Verification,Audited protected procedure rules for membership actions.
+06-19-26,Cloudinary Uploads Security Checks,Restricted backend uploads to images and PDF types. Added dynamic UUID hashes to filenames.
+06-20-26,Static Assets Housekeeping,Optimized static images. Removed obsolete mock files.
+06-21-26,Internal Routing Validation,Staged route definitions on local ports. Checked redirect hooks.
+06-22-26,UI Theme Sync Check,"Verified theme color mappings (saffron, navy) across dashboard widgets."
+06-23-26,Dynamic Project Details & Translate Integration,Replaced static project cards with backend-driven database views. Integrated Google Translate widget in main header.
+06-24-26,SSO Handshake & Forgot Password Flow,Resolved tRPC SSO path errors. Enabled Razorpay verification hooks. Created Forgot Password routes and integrated Resend API keys.
+06-25-26,Policy Modals & Certificate Coordinates,Added Terms and Privacy modals to footer. Fixed Git index short-read errors. Synchronized Certificate Layout builder alignment.
+06-26-26,Certificate Rendering Verification,Staged certificate PDF generation locally and validated exact text overlays.
+06-27-26,Content Population & Project Popups,"Populated Mission & Vision and About Us sections. Dynamically populated Member Profiles (Chairman Poonambhai, Vice-Chairman Dineshbhai). Created scrollable project details modal."
+06-28-26,UI Cards Alignment Review,Adjusted profiles grid cards height and layout margins.
+06-29-26,"Failed Donations CRM, Translate Fixes & WhatsApp REST API",Wrote failed-donations tracker. Fixed Google Translate form input bugs. Setup Twilio WhatsApp instance messaging. Configured Treasurer and joint-secretary profiles.
+06-30-26,Document PDF Print Alignments & Pagination,Aligned Landscape coordinates for Achievement certificate PDFs. Integrated S3 storage uploads for issued ID Cards. Added previous notices pagination.

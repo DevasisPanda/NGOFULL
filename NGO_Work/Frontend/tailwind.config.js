@@ -78,6 +78,7 @@ export default {
         gutter: "24px"
       },
       fontFamily: {
+        sans: ["Plus Jakarta Sans", "sans-serif"],
         "label-md": ["Plus Jakarta Sans"],
         "headline-lg-mobile": ["Plus Jakarta Sans"],
         "headline-md": ["Plus Jakarta Sans"],
