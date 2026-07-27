@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "db:push": "drizzle-kit push",
-    "db:seed": "tsx scripts/add_admin.ts"
+    "db:seed": "tsx scripts/add_admin.ts",
+    "db:migrate-aiven": "tsx scripts/migrate_aiven_to_local.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
