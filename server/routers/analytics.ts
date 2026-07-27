@@ -1,0 +1,303 @@
+import { z } from "zod";
+import { router, adminProcedure } from "../_core/trpc";
+
+/**
+ * Google Analytics 4 Data API Router
+ *
+ * All procedures are admin-only. Fetches analytics data from GA4
+ * and returns it for the admin dashboard charts.
+ *
+ * Requires env vars: GA4_PROPERTY_ID, GA4_CLIENT_EMAIL, GA4_PRIVATE_KEY
+ */
+
+// Lazy-init the analytics client (only when first called)
+let analyticsClient: any = null;
+
+async function getAnalyticsClient() {
+  if (analyticsClient) return analyticsClient;
+
+  const clientEmail = process.env.GA4_CLIENT_EMAIL;
+  const privateKey = process.env.GA4_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+  if (!clientEmail || !privateKey) {
+    throw new Error(
+      "GA4 credentials not configured. Set GA4_CLIENT_EMAIL and GA4_PRIVATE_KEY in .env"
+    );
+  }
+
+  const { BetaAnalyticsDataClient } = await import("@google-analytics/data");
+
+  analyticsClient = new BetaAnalyticsDataClient({
+    credentials: {
+      client_email: clientEmail,
+      private_key: privateKey,
+    },
+  });
+
+  return analyticsClient;
+}
+
+function getPropertyId() {
+  const propertyId = process.env.GA4_PROPERTY_ID;
+  if (!propertyId) {
+    throw new Error(
+      "GA4_PROPERTY_ID not configured. Set it in .env (format: properties/XXXXXXXXX)"
+    );
+  }
+  return propertyId;
+}
+
+// Shared date range input schema
+const dateRangeInput = z.object({
+  startDate: z.string().default("30daysAgo"),
+  endDate: z.string().default("today"),
+});
+
+export const analyticsRouter = router({
+  /**
+   * Overview: key metrics (total users, new users, sessions, page views, bounce rate)
+   */
+  getOverview: adminProcedure
+    .input(dateRangeInput)
+    .query(async ({ input }) => {
+      const client = await getAnalyticsClient();
+      const property = getPropertyId();
+
+      const [response] = await client.runReport({
+        property,
+        dateRanges: [{ startDate: input.startDate, endDate: input.endDate }],
+        metrics: [
+          { name: "totalUsers" },
+          { name: "newUsers" },
+          { name: "sessions" },
+          { name: "screenPageViews" },
+          { name: "averageSessionDuration" },
+          { name: "bounceRate" },
+        ],
+      });
+
+      // Parse the flat metric values into a clean object
+      const row = response?.rows?.[0];
+      const metricValues = row?.metricValues || [];
+
+      return {
+        totalUsers: parseInt(metricValues[0]?.value || "0"),
+        newUsers: parseInt(metricValues[1]?.value || "0"),
+        sessions: parseInt(metricValues[2]?.value || "0"),
+        pageViews: parseInt(metricValues[3]?.value || "0"),
+        avgSessionDuration: parseFloat(metricValues[4]?.value || "0"),
+        bounceRate: parseFloat(metricValues[5]?.value || "0"),
+      };
+    }),
+
+  /**
+   * Top pages: most visited pages, ranked by page views
+   */
+  getTopPages: adminProcedure
+    .input(
+      dateRangeInput.extend({
+        limit: z.number().min(1).max(50).default(20),
+      })
+    )
+    .query(async ({ input }) => {
+      const client = await getAnalyticsClient();
+      const property = getPropertyId();
+
+      const [response] = await client.runReport({
+        property,
+        dateRanges: [{ startDate: input.startDate, endDate: input.endDate }],
+        dimensions: [{ name: "pagePath" }, { name: "pageTitle" }],
+        metrics: [
+          { name: "screenPageViews" },
+          { name: "totalUsers" },
+          { name: "averageSessionDuration" },
+        ],
+        limit: input.limit,
+        orderBys: [
+          { metric: { metricName: "screenPageViews" }, desc: true },
+        ],
+      });
+
+      return (response?.rows || []).map((row: any) => ({
+        pagePath: row.dimensionValues?.[0]?.value || "",
+        pageTitle: row.dimensionValues?.[1]?.value || "",
+        pageViews: parseInt(row.metricValues?.[0]?.value || "0"),
+        users: parseInt(row.metricValues?.[1]?.value || "0"),
+        avgDuration: parseFloat(row.metricValues?.[2]?.value || "0"),
+      }));
+    }),
+
+  /**
+   * Daily visitors: trend data for line charts (users/sessions per day)
+   */
+  getDailyVisitors: adminProcedure
+    .input(dateRangeInput)
+    .query(async ({ input }) => {
+      const client = await getAnalyticsClient();
+      const property = getPropertyId();
+
+      const [response] = await client.runReport({
+        property,
+        dateRanges: [{ startDate: input.startDate, endDate: input.endDate }],
+        dimensions: [{ name: "date" }],
+        metrics: [
+          { name: "totalUsers" },
+          { name: "newUsers" },
+          { name: "sessions" },
+        ],
+        orderBys: [
+          { dimension: { dimensionName: "date" }, desc: false },
+        ],
+      });
+
+      return (response?.rows || []).map((row: any) => {
+        const dateStr = row.dimensionValues?.[0]?.value || "";
+        // GA4 returns date as YYYYMMDD, format to YYYY-MM-DD
+        const formatted = dateStr.length === 8
+          ? `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`
+          : dateStr;
+
+        return {
+          date: formatted,
+          users: parseInt(row.metricValues?.[0]?.value || "0"),
+          newUsers: parseInt(row.metricValues?.[1]?.value || "0"),
+          sessions: parseInt(row.metricValues?.[2]?.value || "0"),
+        };
+      });
+    }),
+
+  /**
+   * Traffic sources: where visitors are coming from (Google, Direct, Social, etc.)
+   */
+  getTrafficSources: adminProcedure
+    .input(dateRangeInput)
+    .query(async ({ input }) => {
+      const client = await getAnalyticsClient();
+      const property = getPropertyId();
+
+      const [response] = await client.runReport({
+        property,
+        dateRanges: [{ startDate: input.startDate, endDate: input.endDate }],
+        dimensions: [
+          { name: "sessionSource" },
+          { name: "sessionMedium" },
+        ],
+        metrics: [{ name: "sessions" }, { name: "totalUsers" }],
+        orderBys: [
+          { metric: { metricName: "sessions" }, desc: true },
+        ],
+        limit: 10,
+      });
+
+      return (response?.rows || []).map((row: any) => ({
+        source: row.dimensionValues?.[0]?.value || "(direct)",
+        medium: row.dimensionValues?.[1]?.value || "(none)",
+        sessions: parseInt(row.metricValues?.[0]?.value || "0"),
+        users: parseInt(row.metricValues?.[1]?.value || "0"),
+      }));
+    }),
+
+  /**
+   * Device stats: desktop vs mobile vs tablet breakdown
+   */
+  getDeviceStats: adminProcedure
+    .input(dateRangeInput)
+    .query(async ({ input }) => {
+      const client = await getAnalyticsClient();
+      const property = getPropertyId();
+
+      const [response] = await client.runReport({
+        property,
+        dateRanges: [{ startDate: input.startDate, endDate: input.endDate }],
+        dimensions: [{ name: "deviceCategory" }],
+        metrics: [{ name: "totalUsers" }, { name: "sessions" }],
+      });
+
+      return (response?.rows || []).map((row: any) => ({
+        device: row.dimensionValues?.[0]?.value || "unknown",
+        users: parseInt(row.metricValues?.[0]?.value || "0"),
+        sessions: parseInt(row.metricValues?.[1]?.value || "0"),
+      }));
+    }),
+
+  /**
+   * Geographic data: top cities and countries of visitors
+   */
+  getGeoStats: adminProcedure
+    .input(dateRangeInput)
+    .query(async ({ input }) => {
+      const client = await getAnalyticsClient();
+      const property = getPropertyId();
+
+      const [response] = await client.runReport({
+        property,
+        dateRanges: [{ startDate: input.startDate, endDate: input.endDate }],
+        dimensions: [{ name: "city" }, { name: "country" }],
+        metrics: [{ name: "totalUsers" }, { name: "sessions" }],
+        orderBys: [
+          { metric: { metricName: "totalUsers" }, desc: true },
+        ],
+        limit: 15,
+      });
+
+      return (response?.rows || []).map((row: any) => ({
+        city: row.dimensionValues?.[0]?.value || "(not set)",
+        country: row.dimensionValues?.[1]?.value || "(not set)",
+        users: parseInt(row.metricValues?.[0]?.value || "0"),
+        sessions: parseInt(row.metricValues?.[1]?.value || "0"),
+      }));
+    }),
+
+  /**
+   * Custom events: all tracked events with counts (donate clicks, form submits, etc.)
+   */
+  getCustomEvents: adminProcedure
+    .input(dateRangeInput)
+    .query(async ({ input }) => {
+      const client = await getAnalyticsClient();
+      const property = getPropertyId();
+
+      const [response] = await client.runReport({
+        property,
+        dateRanges: [{ startDate: input.startDate, endDate: input.endDate }],
+        dimensions: [{ name: "eventName" }],
+        metrics: [{ name: "eventCount" }, { name: "totalUsers" }],
+        orderBys: [
+          { metric: { metricName: "eventCount" }, desc: true },
+        ],
+      });
+
+      return (response?.rows || []).map((row: any) => ({
+        eventName: row.dimensionValues?.[0]?.value || "",
+        count: parseInt(row.metricValues?.[0]?.value || "0"),
+        users: parseInt(row.metricValues?.[1]?.value || "0"),
+      }));
+    }),
+
+  /**
+   * Real-time active users: currently online visitors
+   */
+  getRealtime: adminProcedure.query(async () => {
+    const client = await getAnalyticsClient();
+    const property = getPropertyId();
+
+    const [response] = await client.runRealtimeReport({
+      property,
+      metrics: [{ name: "activeUsers" }],
+      dimensions: [{ name: "unifiedScreenName" }],
+    });
+
+    const totalActive = (response?.rows || []).reduce(
+      (sum: number, row: any) =>
+        sum + parseInt(row.metricValues?.[0]?.value || "0"),
+      0
+    );
+
+    const pages = (response?.rows || []).map((row: any) => ({
+      page: row.dimensionValues?.[0]?.value || "(unknown)",
+      activeUsers: parseInt(row.metricValues?.[0]?.value || "0"),
+    }));
+
+    return { totalActive, pages };
+  }),
+});
