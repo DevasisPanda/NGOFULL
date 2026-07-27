@@ -40,21 +40,34 @@ async function migrateData() {
 
       if (rows.length === 0) continue;
 
+      // Get target columns
+      const [targetColsRows] = await targetConn.query<mysql.RowDataPacket[]>(`SHOW COLUMNS FROM \`${tableName}\``);
+      const targetCols = new Set(targetColsRows.map(c => c.Field));
+
       // Clear existing records in target
       await targetConn.query(`TRUNCATE TABLE \`${tableName}\``);
 
       // Insert rows into target
+      let successCount = 0;
       for (const row of rows) {
-        const keys = Object.keys(row);
-        const values = Object.values(row);
-        const placeholders = keys.map(() => "?").join(", ");
-        const columns = keys.map(k => `\`${k}\``).join(", ");
+        const matchingKeys = Object.keys(row).filter(k => targetCols.has(k));
+        const values = matchingKeys.map(k => {
+          let val = row[k];
+          if (val !== null && typeof val === 'object' && !(val instanceof Date)) {
+            val = JSON.stringify(val);
+          }
+          return val;
+        });
+
+        const placeholders = matchingKeys.map(() => "?").join(", ");
+        const columns = matchingKeys.map(k => `\`${k}\``).join(", ");
 
         const query = `INSERT INTO \`${tableName}\` (${columns}) VALUES (${placeholders})`;
         await targetConn.query(query, values);
+        successCount++;
       }
 
-      console.log(`  -> Successfully migrated ${rows.length} rows to target table \`${tableName}\`.`);
+      console.log(`  -> Successfully migrated ${successCount} rows to target table \`${tableName}\`.`);
     }
 
     // Re-enable foreign key checks
