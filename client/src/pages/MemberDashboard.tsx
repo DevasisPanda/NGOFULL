@@ -176,6 +176,7 @@ export default function MemberDashboard() {
   });
 
   const getProfileQuery = trpc.member.getProfile.useQuery();
+  const { data: myMembership } = trpc.membership.getMyMembership.useQuery();
   const updateProfileMutation = trpc.member.updateProfile.useMutation();
   const configQuery = trpc.system.getConfig.useQuery();
 
