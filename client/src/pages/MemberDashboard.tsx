@@ -180,6 +180,14 @@ export default function MemberDashboard() {
   const updateProfileMutation = trpc.member.updateProfile.useMutation();
   const configQuery = trpc.system.getConfig.useQuery();
 
+  // Member Dashboard Modals & Verification Documents Data Queries
+  const { data: myCertificates, isLoading: isCertificatesLoading } = trpc.document.getMyCertificates.useQuery(undefined, { enabled: myMembership?.status === "active" });
+  const { data: myIDCard, isLoading: isIDCardLoading } = trpc.document.getMyIDCard.useQuery(undefined, { enabled: myMembership?.status === "active" });
+  const { data: myAppointmentLetters } = trpc.document.getMyAppointmentLetters.useQuery(undefined, { enabled: myMembership?.status === "active" });
+  const { data: myDonations, isLoading: isDonationsLoading } = trpc.donation.getMyDonations.useQuery({ page: 1, pageSize: 50 });
+  const activeCampaignsQuery = trpc.campaign.getActive.useQuery();
+  const { data: dbTemplates } = trpc.document.getTemplates.useQuery();
+
   useEffect(() => {
     if (getProfileQuery.data) {
       setProfile(getProfileQuery.data);
