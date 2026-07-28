@@ -253,24 +253,48 @@ export default function MembershipManagementPage() {
       {/* ACTIVE MEMBER BADGE */}
       {isActiveMember && (
         <Card className="bg-emerald-50/90 border-2 border-emerald-300 shadow-md">
-          <CardContent className="p-6 flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3.5 bg-emerald-600 text-white rounded-2xl shadow-lg">
-                <CheckCircle2 className="w-8 h-8" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-2xl font-extrabold text-emerald-950">Official Active Member</h3>
-                  <Sparkles className="w-5 h-5 text-amber-500 fill-amber-500" />
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3.5 bg-emerald-600 text-white rounded-2xl shadow-lg">
+                  <CheckCircle2 className="w-8 h-8" />
                 </div>
-                <p className="text-emerald-800 text-sm font-medium mt-0.5">
-                  Your membership is verified & active! All features (ID Card, Certificates, Beneficiary Applications) are unlocked.
-                </p>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-2xl font-extrabold text-emerald-950">Official Active Member</h3>
+                    <Sparkles className="w-5 h-5 text-amber-500 fill-amber-500" />
+                  </div>
+                  <p className="text-emerald-800 text-sm font-medium mt-0.5">
+                    Your membership is verified & active! All features (ID Card, Certificates, Beneficiary Applications) are unlocked.
+                  </p>
+                </div>
+              </div>
+              <div className="bg-white p-3 px-5 rounded-xl border border-emerald-200 shadow-sm text-right">
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Membership No.</p>
+                <p className="text-lg font-extrabold text-emerald-800">{myMembership.membershipNumber}</p>
               </div>
             </div>
-            <div className="bg-white p-3 px-5 rounded-xl border border-emerald-200 shadow-sm text-right">
-              <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Membership No.</p>
-              <p className="text-lg font-extrabold text-emerald-800">{myMembership.membershipNumber}</p>
+
+            {/* Plan & Subscription Details */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-emerald-200 text-xs font-semibold text-emerald-950">
+              <div className="bg-white p-3 rounded-lg border border-emerald-100 shadow-xs">
+                <span className="text-gray-500 block uppercase tracking-wider text-[10px]">Plan Type</span>
+                <span className="font-extrabold text-sm text-[#061941] capitalize">
+                  {myMembership.membershipType === "lifetime" ? "Lifetime (₹5,100 One-Time)" : "Annual Subscription (₹500/year)"}
+                </span>
+              </div>
+              <div className="bg-white p-3 rounded-lg border border-emerald-100 shadow-xs">
+                <span className="text-gray-500 block uppercase tracking-wider text-[10px]">Renewal Date</span>
+                <span className="font-extrabold text-sm text-[#061941]">
+                  {myMembership.membershipType === "lifetime" ? "Lifetime (Never Expires)" : myMembership.renewalDate ? new Date(myMembership.renewalDate).toLocaleDateString() : "Annual Renewal"}
+                </span>
+              </div>
+              <div className="bg-white p-3 rounded-lg border border-emerald-100 shadow-xs">
+                <span className="text-gray-500 block uppercase tracking-wider text-[10px]">Subscription Status</span>
+                <span className="font-extrabold text-sm text-green-700">
+                  {myMembership.membershipType === "lifetime" ? "Lifetime Active" : "Active (Can be cancelled anytime)"}
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>
