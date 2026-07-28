@@ -12,10 +12,13 @@ import { VerifiableDocument } from "@/components/VerifiableDocument";
 import { format } from "date-fns";
 import { Eye, UserCheck, Calendar } from "lucide-react";
 
+import { ImageUpload } from "@/components/ui/ImageUpload";
+
 export default function GenerateVisitorCertPage() {
   const [formData, setFormData] = useState({
     fullName: "",
     designation: "",
+    visitorPhoto: "",
     mobile: "",
     email: "",
     city: "",
@@ -45,6 +48,7 @@ export default function GenerateVisitorCertPage() {
           city: formData.city || "",
           issueDate: format(new Date(formData.issueDate), "dd/MM/yyyy"),
           expiryDate: formData.expiryDate ? format(new Date(formData.expiryDate), "dd/MM/yyyy") : "Same Day",
+          visitorPhoto: formData.visitorPhoto || "",
         },
         type: "visitor",
       });
@@ -87,6 +91,16 @@ export default function GenerateVisitorCertPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="bg-slate-50 p-4 rounded-md border border-slate-200 mb-4">
+              <ImageUpload
+                label="Visitor Photograph / Passport Picture"
+                value={formData.visitorPhoto}
+                onChange={(url) => setFormData({ ...formData, visitorPhoto: url })}
+                defaultAspectRatio="portrait"
+              />
+              <p className="text-xs text-gray-500 mt-1">Upload a clear photo for the Visitor Pass identification card.</p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name *</Label>
               <Input id="fullName" placeholder="e.g. John Doe" value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} required />
@@ -151,8 +165,14 @@ export default function GenerateVisitorCertPage() {
                 fieldValues={preview.fieldValues}
                 dbTemplates={dbTemplates}
                 cardRef={previewRef}
-                className="max-w-[320px] mx-auto rounded-xl"
-              />
+                className="max-w-[320px] mx-auto rounded-xl relative"
+              >
+                {preview.fieldValues.visitorPhoto && (
+                  <div className="absolute top-[39.3%] left-[18.7%] -translate-x-1/2 w-[11.5%] aspect-[1/1] rounded-xl overflow-hidden border border-gray-100 shadow bg-white flex items-center justify-center">
+                    <img src={preview.fieldValues.visitorPhoto} alt="Visitor" className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </VerifiableDocument>
             </div>
           )}
 

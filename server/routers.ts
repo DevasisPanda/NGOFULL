@@ -23,9 +23,11 @@ import { newsRouter } from "./routers/news";
 import { paymentRouter } from "./routers/payment";
 import { stubRouters } from "./routers/stubs";
 import { analyticsRouter } from "./routers/analytics";
+import { managementBodyRouter } from "./routers/managementBody";
 
 export const appRouter = router({
   analytics: analyticsRouter,
+  managementBody: managementBodyRouter,
   system: systemRouter,
   auth: authRouter,
   member: memberRouter,

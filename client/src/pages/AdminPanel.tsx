@@ -40,6 +40,7 @@ import HomepageManagementPage from "./admin/website/HomepageManagementPage";
 import AboutUsManagementPage from "./admin/website/AboutUsManagementPage";
 import AuditManagementPage from "./admin/website/AuditManagementPage";
 import AchievementsManagementPage from "./admin/website/AchievementsManagementPage";
+import ManagementBodyAdminPage from "./admin/ManagementBodyAdminPage";
 
 // Import News module pages
 import CreateNewsPage from "./admin/news/CreateNewsPage";
@@ -143,6 +144,7 @@ export default function AdminPanel() {
             <Route path="/admin/visitor/active" component={ActiveVisitorCertsPage} />
 
             {/* Website Settings Module */}
+            <Route path="/admin/management-body" component={ManagementBodyAdminPage} />
             <Route path="/admin/website/gallery" component={WebsiteManagement} />
             <Route path="/admin/website/homepage" component={HomepageManagementPage} />
             <Route path="/admin/website/about" component={AboutUsManagementPage} />

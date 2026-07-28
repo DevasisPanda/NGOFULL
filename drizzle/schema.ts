@@ -827,6 +827,27 @@ export const achievements = mysqlTable("achievements", {
 export type Achievement = typeof achievements.$inferSelect;
 export type InsertAchievement = typeof achievements.$inferInsert;
 
+/**
+ * Management Members (Dynamic Leadership Body)
+ */
+export const managementMembers = mysqlTable("management_members", {
+  id: int("id").autoincrement().primaryKey(),
+  displayOrder: int("displayOrder").default(1).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  role: varchar("role", { length: 255 }).notNull(),
+  image: text("image").notNull(),
+  quote: text("quote"),
+  bio: text("bio"),
+  points: json("points"), // JSON array of { icon: string, title: string, description: string }
+  tag: varchar("tag", { length: 255 }),
+  status: mysqlEnum("status", ["active", "hidden"]).default("active").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ManagementMember = typeof managementMembers.$inferSelect;
+export type InsertManagementMember = typeof managementMembers.$inferInsert;
+
 
 
 

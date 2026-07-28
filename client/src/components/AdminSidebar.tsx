@@ -92,6 +92,7 @@ const menuItems: MenuItem[] = [
       { id: "news-create", label: "Create News", path: "/admin/news/create" },
   ]},
   { id: "website-settings", label: "Website Settings", icon: <Globe className="w-5 h-5" />, submenu: [
+      { id: "web-management-team", label: "Management Team (12 Leaders)", path: "/admin/management-body" },
       { id: "web-gallery", label: "Gallery Management", path: "/admin/website/gallery" },
       { id: "web-homepage", label: "Homepage Management", path: "/admin/website/homepage" },
       { id: "web-aboutus", label: "About Us Management", path: "/admin/website/about" },
