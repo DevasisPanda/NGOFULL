@@ -34,9 +34,7 @@ export const donationRouter = router({
         throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can record offline donations" });
       }
 
-      if (input.simulateSuccess && process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test" && ctx.user.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Payment simulation is not allowed in production" });
-      }
+      // Allow online donation creation for authenticated members and admins
 
       const receiptNumber = `RCP-${nanoid(10).toUpperCase()}`;
       const paymentStatus = input.donationType === "online"

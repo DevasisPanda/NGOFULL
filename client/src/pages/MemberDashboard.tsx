@@ -198,24 +198,6 @@ export default function MemberDashboard() {
             <h1 className="text-3xl font-bold text-gray-900">Member Dashboard</h1>
           </div>
           <div className="flex items-center gap-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <Heart className="h-4 w-4 text-red-500 fill-red-500" />
-                  Beneficiary
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-white align-end">
-                <DropdownMenuItem className="cursor-pointer" onClick={() => window.open(`${configQuery.data?.frontendUrl || "http://localhost:5173"}/beneficiary`, "_blank")}>
-                  Apply for Beneficiary
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => window.open(`${configQuery.data?.frontendUrl || "http://localhost:5173"}/view-beneficiary`, "_blank")}>
-                  View Beneficiary
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
             <Button onClick={handleLogout} variant="outline" className="gap-2">
               <LogOut className="h-4 w-4" />
               Logout
@@ -406,24 +388,24 @@ export default function MemberDashboard() {
               {/* Membership Button / Active Badge */}
               {!myMembership || myMembership.status !== "active" ? (
                 <Button 
-                  className="h-12 bg-[#fed813] hover:bg-[#ebd41c] text-[#061941] font-extrabold gap-2 border-2 border-[#061941] animate-pulse shadow-md" 
+                  className="min-h-[48px] h-auto py-2.5 px-3 bg-[#fed813] hover:bg-[#ebd41c] text-[#061941] font-extrabold gap-2 border-2 border-[#061941] animate-pulse shadow-md text-xs sm:text-sm text-center leading-tight whitespace-normal max-w-full flex items-center justify-center" 
                   onClick={() => setLocation("/member/membership")}
                 >
-                  <User className="h-4 w-4" />
-                  {myMembership?.status === "pending" ? "Membership Pending (24h Review)" : "Apply for Membership & Pay"}
+                  <User className="h-4 w-4 shrink-0" />
+                  <span>{myMembership?.status === "pending" ? "Membership Pending (24h Review)" : "Apply for Membership & Pay"}</span>
                 </Button>
               ) : (
                 <Button 
-                  className="h-12 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold gap-2 cursor-default"
+                  className="min-h-[48px] h-auto py-2.5 px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold gap-2 cursor-default text-xs sm:text-sm text-center leading-tight whitespace-normal max-w-full flex items-center justify-center"
                 >
-                  <CheckCircle2 className="h-4 w-4 text-emerald-300" />
-                  Active Member ({myMembership.membershipNumber})
+                  <CheckCircle2 className="h-4 w-4 text-emerald-300 shrink-0" />
+                  <span>Active Member ({myMembership.membershipNumber})</span>
                 </Button>
               )}
 
               {/* View & Download ID Card */}
               <Button 
-                className={`h-12 gap-2 transition-all ${
+                className={`min-h-[48px] h-auto py-2.5 px-3 gap-2 transition-all text-xs sm:text-sm flex items-center justify-center ${
                   myMembership?.status === "active" 
                     ? "bg-blue-600 hover:bg-blue-700 text-white" 
                     : "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed hover:bg-gray-100"
@@ -436,14 +418,14 @@ export default function MemberDashboard() {
                   }
                 }}
               >
-                {myMembership?.status === "active" ? <CreditCard className="h-4 w-4" /> : <Lock className="h-4 w-4 text-amber-500" />}
-                View & Download ID Card
+                {myMembership?.status === "active" ? <CreditCard className="h-4 w-4 shrink-0" /> : <Lock className="h-4 w-4 text-amber-500 shrink-0" />}
+                <span>View & Download ID Card</span>
               </Button>
 
               {/* Appointment Letter */}
               {myAppointmentLetters && myAppointmentLetters.length > 0 && (
                 <Button 
-                  className={`h-12 gap-2 transition-all ${
+                  className={`min-h-[48px] h-auto py-2.5 px-3 gap-2 transition-all text-xs sm:text-sm flex items-center justify-center ${
                     myMembership?.status === "active" 
                       ? "bg-indigo-600 hover:bg-indigo-700 text-white" 
                       : "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed hover:bg-gray-100"
@@ -456,20 +438,20 @@ export default function MemberDashboard() {
                     }
                   }}
                 >
-                  {myMembership?.status === "active" ? <FileText className="h-4 w-4" /> : <Lock className="h-4 w-4 text-amber-500" />}
-                  View Appointment Letter
+                  {myMembership?.status === "active" ? <FileText className="h-4 w-4 shrink-0" /> : <Lock className="h-4 w-4 text-amber-500 shrink-0" />}
+                  <span>View Appointment Letter</span>
                 </Button>
               )}
 
               {/* Make a Donation */}
-              <Button className="h-12 bg-green-600 hover:bg-green-700 gap-2 text-white" onClick={() => setIsDonationModalOpen(true)}>
-                <Heart className="h-4 w-4" />
-                Make a Donation
+              <Button className="min-h-[48px] h-auto py-2.5 px-3 bg-green-600 hover:bg-green-700 gap-2 text-white text-xs sm:text-sm flex items-center justify-center" onClick={() => setIsDonationModalOpen(true)}>
+                <Heart className="h-4 w-4 shrink-0" />
+                <span>Make a Donation</span>
               </Button>
 
               {/* View Certificates */}
               <Button 
-                className={`h-12 gap-2 transition-all ${
+                className={`min-h-[48px] h-auto py-2.5 px-3 gap-2 transition-all text-xs sm:text-sm flex items-center justify-center ${
                   myMembership?.status === "active" 
                     ? "bg-purple-600 hover:bg-purple-700 text-white" 
                     : "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed hover:bg-gray-100"
@@ -482,39 +464,46 @@ export default function MemberDashboard() {
                   }
                 }}
               >
-                {myMembership?.status === "active" ? <Award className="h-4 w-4" /> : <Lock className="h-4 w-4 text-amber-500" />}
-                View Certificates
+                {myMembership?.status === "active" ? <Award className="h-4 w-4 shrink-0" /> : <Lock className="h-4 w-4 text-amber-500 shrink-0" />}
+                <span>View Certificates</span>
               </Button>
 
               {/* Donation History */}
-              <Button className="h-12 bg-orange-600 hover:bg-orange-700 gap-2 text-white" onClick={() => setIsHistoryModalOpen(true)}>
-                <FileText className="h-4 w-4" />
-                Donation History
+              <Button className="min-h-[48px] h-auto py-2.5 px-3 bg-orange-600 hover:bg-orange-700 gap-2 text-white text-xs sm:text-sm flex items-center justify-center" onClick={() => setIsHistoryModalOpen(true)}>
+                <FileText className="h-4 w-4 shrink-0" />
+                <span>Donation History</span>
               </Button>
 
               {/* Apply for Beneficiary */}
               <Button 
-                className={`h-12 gap-2 transition-all ${
+                className={`min-h-[48px] h-auto py-2.5 px-3 gap-2 transition-all text-xs sm:text-sm flex items-center justify-center ${
                   myMembership?.status === "active" 
                     ? "bg-rose-600 hover:bg-rose-700 text-white cursor-pointer" 
                     : "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed hover:bg-gray-100"
                 }`}
                 onClick={() => {
                   if (myMembership?.status === "active") {
-                    window.open(`${configQuery.data?.frontendUrl || "http://localhost:5173"}/beneficiary`, "_blank");
+                    const baseUrl = configQuery.data?.frontendUrl || "https://valmikisamajcharitabletrust.org";
+                    window.open(`${baseUrl}/beneficiary`, "_blank");
                   } else {
                     toast.error("Active Membership Required! Approval takes up to 24h after payment.");
                   }
                 }}
               >
-                {myMembership?.status === "active" ? <Heart className="h-4 w-4 fill-white" /> : <Lock className="h-4 w-4 text-amber-500" />}
-                Apply for Beneficiary
+                {myMembership?.status === "active" ? <Heart className="h-4 w-4 fill-white shrink-0" /> : <Lock className="h-4 w-4 text-amber-500 shrink-0" />}
+                <span>Apply for Beneficiary</span>
               </Button>
 
               {/* View Beneficiary */}
-              <Button className="h-12 bg-emerald-600 hover:bg-emerald-700 gap-2 text-white" onClick={() => window.open(`${configQuery.data?.frontendUrl || "http://localhost:5173"}/view-beneficiary`, "_blank")}>
-                <Users className="h-4 w-4" />
-                View Beneficiary
+              <Button 
+                className="min-h-[48px] h-auto py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 gap-2 text-white text-xs sm:text-sm flex items-center justify-center" 
+                onClick={() => {
+                  const baseUrl = configQuery.data?.frontendUrl || "https://valmikisamajcharitabletrust.org";
+                  window.open(`${baseUrl}/view-beneficiary`, "_blank");
+                }}
+              >
+                <Users className="h-4 w-4 shrink-0" />
+                <span>View Beneficiary</span>
               </Button>
             </div>
           </CardContent>
