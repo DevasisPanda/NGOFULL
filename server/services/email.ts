@@ -44,7 +44,7 @@ export const sendPasswordResetEmail = async (email: string, resetLink: string) =
     const response = await axios.post(
       'https://api.resend.com/emails',
       {
-        from: 'Valmiki Samaj Trust <onboarding@resend.dev>',
+        from: 'Valmiki Samaj Trust <no-reply@valmikisamajcharitabletrust.org>',
         to: email,
         subject: subject,
         html: htmlContent,
