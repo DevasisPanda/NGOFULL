@@ -16,12 +16,15 @@ let analyticsClient: any = null;
 async function getAnalyticsClient() {
   if (analyticsClient) return analyticsClient;
 
-  const clientEmail = process.env.GA4_CLIENT_EMAIL;
-  const privateKey = process.env.GA4_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const clientEmail = process.env.GA4_CLIENT_EMAIL?.trim().replace(/^["']|["']$/g, "");
+  let privateKey = process.env.GA4_PRIVATE_KEY?.trim().replace(/^["']|["']$/g, "");
 
   if (!clientEmail || !privateKey) {
     return null;
   }
+
+  // Handle escaped newlines from environment variable strings
+  privateKey = privateKey.replace(/\\n/g, "\n");
 
   try {
     const { BetaAnalyticsDataClient } = await import("@google-analytics/data");
@@ -41,7 +44,11 @@ async function getAnalyticsClient() {
 }
 
 function getPropertyId() {
-  return process.env.GA4_PROPERTY_ID || null;
+  const rawId = process.env.GA4_PROPERTY_ID;
+  if (!rawId) return null;
+  const cleanId = rawId.trim().replace(/^["']|["']$/g, "");
+  if (!cleanId) return null;
+  return cleanId.startsWith("properties/") ? cleanId : `properties/${cleanId}`;
 }
 
 // Shared date range input schema
