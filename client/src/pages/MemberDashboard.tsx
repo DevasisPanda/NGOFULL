@@ -22,6 +22,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 export default function MemberDashboard() {
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
@@ -43,22 +49,21 @@ export default function MemberDashboard() {
   const certificateRef = useRef<HTMLDivElement>(null);
   const idCardRef = useRef<HTMLDivElement>(null);
 
-  // Donation form states
-  const [donationAmount, setDonationAmount] = useState("");
-  const [selectedCampaign, setSelectedCampaign] = useState<string>("general");
-  const [donationNotes, setDonationNotes] = useState("");
-  const [simulateSuccess, setSimulateSuccess] = useState(true);
+  // Load Razorpay Checkout SDK
+  useEffect(() => {
+    if (typeof window !== "undefined" && !window.Razorpay) {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
 
-  // Queries
-  const { data: myMembership } = trpc.membership.getMyMembership.useQuery();
-  const activeCampaignsQuery = trpc.campaign.getActive.useQuery(undefined, { enabled: isDonationModalOpen });
-  const { data: myDonations, isLoading: isDonationsLoading } = trpc.donation.getMyDonations.useQuery({ page: 1, pageSize: 100 }, { enabled: isHistoryModalOpen || isDonationModalOpen });
-  const { data: myCertificates, isLoading: isCertificatesLoading } = trpc.document.getMyCertificates.useQuery(undefined, { enabled: isCertificatesModalOpen });
-  const { data: myIDCard, isLoading: isIDCardLoading } = trpc.document.getMyIDCard.useQuery(undefined, { enabled: isIDCardModalOpen });
-  const { data: dbTemplates } = trpc.document.getTemplateConfigs.useQuery();
-  const { data: myAppointmentLetters } = trpc.document.getMyAppointmentLetters.useQuery();
+  // Razorpay Mutations
+  const createOrderMutation = trpc.payment.createOrder.useMutation();
+  const verifyPaymentMutation = trpc.payment.verifyPayment.useMutation();
 
-  // Mutation
+  // Legacy direct donation mutation (fallback/offline)
   const createDonationMutation = trpc.donation.create.useMutation({
     onSuccess: (res) => {
       toast.success(`Donation successful! Receipt No: ${res.receiptNumber}`);
@@ -72,7 +77,7 @@ export default function MemberDashboard() {
     }
   });
 
-  const handleMakeDonation = (e: React.FormEvent) => {
+  const handleMakeDonation = async (e: React.FormEvent) => {
     e.preventDefault();
     const amountNum = parseFloat(donationAmount);
     if (isNaN(amountNum) || amountNum <= 0) {
@@ -80,13 +85,75 @@ export default function MemberDashboard() {
       return;
     }
 
-    createDonationMutation.mutate({
-      amount: amountNum,
-      donationType: "online",
-      campaignId: selectedCampaign !== "general" ? parseInt(selectedCampaign) : undefined,
-      purpose: selectedCampaign === "general" ? "General Donation" : undefined,
-      simulateSuccess,
-    });
+    // 1. Trigger Razorpay Order Creation
+    createOrderMutation.mutate(
+      {
+        amount: amountNum,
+        donorName: profile?.name || "Valued Member",
+        donorEmail: profile?.email || "member@valmikisamajcharitabletrust.org",
+        donorPhone: (profile?.phone || "").replace(/\D/g, "").slice(0, 10) || undefined,
+        purpose: selectedCampaign === "general" ? (donationNotes || "General Donation") : `Campaign Donation: ${selectedCampaign}`,
+        campaignId: selectedCampaign !== "general" ? parseInt(selectedCampaign) : undefined,
+      },
+      {
+        onSuccess: (orderData) => {
+          if (!window.Razorpay) {
+            toast.error("Razorpay SDK failed to load. Please refresh and try again.");
+            return;
+          }
+
+          const options = {
+            key: orderData.keyId,
+            amount: orderData.amount,
+            currency: orderData.currency,
+            order_id: orderData.orderId,
+            name: "Valmiki Samaj Charitable Trust",
+            description: selectedCampaign === "general" ? (donationNotes || "NGO Donation") : `Campaign #${selectedCampaign}`,
+            prefill: {
+              name: profile?.name || "",
+              email: profile?.email || "",
+              contact: profile?.phone || "",
+            },
+            theme: {
+              color: "#061941",
+            },
+            handler: function (response: any) {
+              verifyPaymentMutation.mutate(
+                {
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpaySignature: response.razorpay_signature,
+                  donorName: profile?.name || "Valued Member",
+                  donorEmail: profile?.email || "",
+                  donorPhone: profile?.phone || "",
+                  amount: amountNum,
+                  purpose: selectedCampaign === "general" ? (donationNotes || "General Donation") : undefined,
+                  campaignId: selectedCampaign !== "general" ? parseInt(selectedCampaign) : undefined,
+                },
+                {
+                  onSuccess: (res) => {
+                    toast.success(`Donation Payment Verified! Receipt No: ${res.receiptNumber}`);
+                    setIsDonationModalOpen(false);
+                    setDonationAmount("");
+                    setDonationNotes("");
+                    utils.donation.getMyDonations.invalidate();
+                  },
+                  onError: (err) => {
+                    toast.error(err.message || "Payment verification failed.");
+                  },
+                }
+              );
+            },
+          };
+
+          const rzp = new window.Razorpay(options);
+          rzp.open();
+        },
+        onError: (err) => {
+          toast.error(err.message || "Failed to initiate payment. Please check Razorpay keys in server configuration.");
+        },
+      }
+    );
   };
   const [formData, setFormData] = useState({
     name: "",
@@ -568,25 +635,13 @@ export default function MemberDashboard() {
               />
             </div>
 
-            <div className="flex items-center gap-2 py-2">
-              <input
-                id="simulate-success"
-                type="checkbox"
-                className="rounded border-gray-300 h-4 w-4"
-                checked={simulateSuccess}
-                onChange={(e) => setSimulateSuccess(e.target.checked)}
-              />
-              <Label htmlFor="simulate-success" className="text-xs text-gray-500 cursor-pointer">
-                Simulate successful online payment completion
-              </Label>
-            </div>
-
             <DialogFooter className="pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setIsDonationModalOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-teal-700 hover:bg-teal-800 text-white" disabled={createDonationMutation.isPending}>
-                {createDonationMutation.isPending ? "Processing..." : "Pay & Donate"}
+              <Button type="submit" className="bg-[#061941] hover:bg-[#0a255c] text-white font-extrabold gap-2" disabled={createOrderMutation.isPending}>
+                <CreditCard className="w-4 h-4 text-[#fed813]" />
+                {createOrderMutation.isPending ? "Opening Razorpay..." : "Proceed to Pay via Razorpay"}
               </Button>
             </DialogFooter>
           </form>
