@@ -4,10 +4,10 @@ import axios from 'axios';
  * WhatsApp Messaging Service via AllExpert REST API
  */
 
-const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || '6a427de1437f3';
-const instanceId = process.env.WHATSAPP_INSTANCE_ID || '609ACF283XXXX';
-
 export const sendWhatsAppMessage = async (phone: string, subject: string, text: string) => {
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || '6a427de1437f3';
+  const instanceId = process.env.WHATSAPP_INSTANCE_ID || '609ACF283XXXX';
+
   const formattedMessage = `*${subject}*\n\n${text}\n\n_This is an automated message from Valmiki Samaj Charitable Trust._`;
 
   // Format phone number to clean digits (no +, spaces or dashes)
