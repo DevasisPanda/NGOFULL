@@ -126,16 +126,10 @@ export default function MemberDashboard() {
                   razorpayOrderId: response.razorpay_order_id,
                   razorpayPaymentId: response.razorpay_payment_id,
                   razorpaySignature: response.razorpay_signature,
-                  donorName: profile?.name || "Valued Member",
-                  donorEmail: profile?.email || "",
-                  donorPhone: profile?.phone || "",
-                  amount: amountNum,
-                  purpose: selectedCampaign === "general" ? (donationNotes || "General Donation") : undefined,
-                  campaignId: selectedCampaign !== "general" ? parseInt(selectedCampaign) : undefined,
                 },
                 {
                   onSuccess: (res) => {
-                    toast.success(`Donation Payment Verified! Receipt No: ${res.receiptNumber}`);
+                    toast.success("Donation Payment Verified! Thank you for your support.");
                     setIsDonationModalOpen(false);
                     setDonationAmount("");
                     setDonationNotes("");
@@ -189,7 +183,7 @@ export default function MemberDashboard() {
   const { data: myAppointmentLetters } = trpc.document.getMyAppointmentLetters.useQuery(undefined, { enabled: myMembership?.status === "active" });
   const { data: myDonations, isLoading: isDonationsLoading } = trpc.donation.getMyDonations.useQuery({ page: 1, pageSize: 50 });
   const activeCampaignsQuery = trpc.campaign.getActive.useQuery();
-  const { data: dbTemplates } = trpc.document.getTemplates.useQuery();
+  const { data: dbTemplates } = trpc.document.getTemplateConfigs.useQuery();
 
   useEffect(() => {
     if (getProfileQuery.data) {
