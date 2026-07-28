@@ -36,6 +36,9 @@ export default function MemberDashboard() {
 
   // Modal dialog states
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
+  const [donationAmount, setDonationAmount] = useState("");
+  const [donationNotes, setDonationNotes] = useState("");
+  const [selectedCampaign, setSelectedCampaign] = useState("general");
   const [isCertificatesModalOpen, setIsCertificatesModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isIDCardModalOpen, setIsIDCardModalOpen] = useState(false);
