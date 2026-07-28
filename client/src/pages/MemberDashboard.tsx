@@ -236,7 +236,7 @@ export default function MemberDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* 24-HOUR REVIEW NOTIFICATION BANNER */}
-      {myMembership?.status === "pending" && (
+      {myMembership?.status === "pending" && (myMembership?.paymentStatus === "paid" || myMembership?.paymentStatus === "exempted") && (
         <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white p-4 shadow-md">
           <div className="max-w-4xl mx-auto flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
@@ -459,7 +459,7 @@ export default function MemberDashboard() {
                   onClick={() => setLocation("/member/membership")}
                 >
                   <User className="h-4 w-4 shrink-0" />
-                  <span>{myMembership?.status === "pending" ? "Membership Pending (24h Review)" : "Apply for Membership & Pay"}</span>
+                  <span>{myMembership?.status === "pending" && (myMembership?.paymentStatus === "paid" || myMembership?.paymentStatus === "exempted") ? "Membership Pending (24h Review)" : "Apply for Membership & Pay"}</span>
                 </Button>
               ) : (
                 <Button 

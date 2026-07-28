@@ -110,19 +110,7 @@ export const authRouter = router({
 
         const newUserId = insertResult.insertId;
 
-        const membershipNumber = await generateMembershipNumber(tx);
-
-        // Insert pending member
-        await tx.insert(members).values({
-          userId: newUserId,
-          membershipNumber,
-          membershipType: "regular",
-          status: "pending",
-          joinDate: new Date(),
-          renewalDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+        // User is registered as a user account. Membership record will be created upon payment verification.
       });
 
       return {

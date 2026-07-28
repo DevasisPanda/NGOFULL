@@ -212,7 +212,11 @@ export default function MembershipManagementPage() {
     }
   };
 
-  const isPendingApproval = myMembership?.status === "pending" || (myMembership && myMembership.paymentStatus === "paid" && myMembership.status !== "active");
+  const isPendingApproval = Boolean(
+    myMembership && 
+    (myMembership.paymentStatus === "paid" || myMembership.paymentStatus === "exempted") && 
+    myMembership.status !== "active"
+  );
   const isActiveMember = myMembership?.status === "active";
 
   return (

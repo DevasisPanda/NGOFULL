@@ -37,9 +37,9 @@ export const donationRouter = router({
       // Allow online donation creation for authenticated members and admins
 
       const receiptNumber = `RCP-${nanoid(10).toUpperCase()}`;
-      const paymentStatus = input.donationType === "online"
-        ? (input.simulateSuccess ? "completed" : "pending")
-        : "completed";
+      const paymentStatus = ctx.user.role === "admin" && input.donationType !== "online"
+        ? "completed"
+        : (input.simulateSuccess && process.env.NODE_ENV === "development" ? "completed" : "pending");
 
       await db.insert(donations).values({
         donorId: ctx.user.id,
