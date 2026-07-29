@@ -245,11 +245,23 @@ export default function CertificateBuilder() {
     }));
   };
 
+  const resetMutation = trpc.document.resetTemplateConfig.useMutation({
+    onSuccess: (res) => {
+      toast.success(res.message);
+      const staticTemplate = INITIAL_TEMPLATES.find(t => t.id === activeTemplateId);
+      if (staticTemplate) {
+        setTemplates(prev => prev.map(t => t.id === activeTemplateId ? { ...staticTemplate } : t));
+      }
+      utils.document.getTemplateConfigs.invalidate();
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to reset template layout");
+    }
+  });
+
   const resetToDefaultLayout = () => {
-    const staticTemplate = INITIAL_TEMPLATES.find(t => t.id === activeTemplateId);
-    if (!staticTemplate) return;
-    setTemplates(prev => prev.map(t => t.id === activeTemplateId ? { ...staticTemplate } : t));
-    toast.success("Reset to clean default layout! Click 'Apply Layout for Everyone' to save.");
+    if (!activeTemplateId) return;
+    resetMutation.mutate({ type: activeTemplateId });
   };
 
   const copyConfigJson = () => {

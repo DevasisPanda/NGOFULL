@@ -841,4 +841,26 @@ export const documentRouter = router({
         });
       }
     }),
+
+  resetTemplateConfig: adminProcedure
+    .input(z.object({ type: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database not available",
+        });
+      }
+      try {
+        await db.delete(certificateTemplates).where(eq(certificateTemplates.type, input.type));
+        return { success: true, message: "Template layout reset to clean default successfully" };
+      } catch (error) {
+        console.error("Error resetting template config:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to reset template config",
+        });
+      }
+    }),
 });
