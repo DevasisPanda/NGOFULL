@@ -74,7 +74,7 @@ export function VerifiableDocument({
     const image = new Image();
     image.crossOrigin = "anonymous";
     image.src = template.src;
-    image.onload = () => {
+    image.onload = async () => {
       const imgWidth = template.imgWidth || image.naturalWidth || image.width || 1200;
       const imgHeight = template.imgHeight || image.naturalHeight || image.height || 850;
 
@@ -84,10 +84,46 @@ export function VerifiableDocument({
       // Draw background
       ctx.drawImage(image, 0, 0, imgWidth, imgHeight);
 
+      // Helper function to load photo image if present
+      const loadPhoto = (src: string): Promise<HTMLImageElement | null> => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null);
+          img.src = src;
+        });
+      };
+
       // Draw each field
-      template.fields.forEach((field) => {
+      for (const field of template.fields) {
+        if (field.id === "photo") {
+          const photoSrc = fieldValues.photo || fieldValues.visitorPhoto || fieldValues.profileImage || fieldValues.cardImage;
+          if (photoSrc) {
+            const photoImg = await loadPhoto(photoSrc);
+            if (photoImg) {
+              const boxWidth = field.size || 160;
+              const boxHeight = Math.round(boxWidth * 1.25);
+              const boxX = field.x - Math.round(boxWidth / 2);
+              const boxY = field.y;
+
+              ctx.save();
+              ctx.beginPath();
+              if (ctx.roundRect) {
+                ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 10);
+              } else {
+                ctx.rect(boxX, boxY, boxWidth, boxHeight);
+              }
+              ctx.clip();
+              ctx.drawImage(photoImg, boxX, boxY, boxWidth, boxHeight);
+              ctx.restore();
+            }
+          }
+          continue;
+        }
+
         const val = fieldValues[field.id];
-        if (val === undefined || val === null || val === "") return;
+        if (val === undefined || val === null || val === "") continue;
 
         ctx.font = `${field.weight === "bold" ? "bold" : "normal"} ${field.size}px Roboto, 'Open Sans', 'Inter', sans-serif`;
         ctx.fillStyle = field.color;
@@ -98,7 +134,7 @@ export function VerifiableDocument({
         lines.forEach((line, index) => {
           ctx.fillText(line, field.x, field.y + index * field.size * 1.2);
         });
-      });
+      }
     };
   }, [template, fieldValues]);
 
