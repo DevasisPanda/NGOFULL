@@ -8,7 +8,7 @@ import "dotenv/config";
 async function testWhatsAppMessage() {
   const instanceId = process.env.WHATSAPP_INSTANCE_ID ? process.env.WHATSAPP_INSTANCE_ID.trim().replace(/^["']|["']$/g, "") : "";
   const accessToken = process.env.WHATSAPP_ACCESS_TOKEN ? process.env.WHATSAPP_ACCESS_TOKEN.trim().replace(/^["']|["']$/g, "") : "";
-  const number = process.argv[2] || '917077906817';
+  const number = process.argv[2] || '919024548020';
   const text = process.argv[3] || 'Hi from NGO Management System';
   const subject = 'Live System Test';
 

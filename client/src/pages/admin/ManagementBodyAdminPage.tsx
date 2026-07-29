@@ -185,7 +185,14 @@ export default function ManagementBodyAdminPage() {
               {members.map((m) => (
                 <div key={m.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex flex-col justify-between hover:shadow-md transition-shadow relative">
                   <div className="flex items-start gap-4">
-                    <img src={m.image} alt={m.name} className="w-16 h-16 rounded-xl object-cover border border-gray-300 shrink-0" />
+                    <img 
+                      src={m.image} 
+                      alt={m.name} 
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name)}&background=061941&color=fed813&size=256`;
+                      }}
+                      className="w-16 h-16 rounded-xl object-cover border border-gray-300 shrink-0" 
+                    />
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full">
                         Order #{m.displayOrder}
