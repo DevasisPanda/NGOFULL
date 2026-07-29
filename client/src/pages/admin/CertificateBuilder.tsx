@@ -78,7 +78,7 @@ const INITIAL_TEMPLATES: TemplateConfig[] = [
     name: 'Generate ID',
     src: 'https://res.cloudinary.com/lbpicumc/image/upload/v1785351419/ngo-management/templates/generate_id_template.jpg',
     fields: [
-      { id: 'photo', label: 'Member Photo Box', text: 'Member Photo', x: 215, y: 440, size: 160, color: '#2563eb', weight: 'bold', align: 'center' },
+      { id: 'photo', label: 'Member Photo Box', text: 'Member Photo', x: 215, y: 525, size: 160, color: '#2563eb', weight: 'bold', align: 'center' },
       { id: 'fullName', label: 'Name', text: 'Devasis Panda', x: 200, y: 695, size: 24, color: '#ef4444', weight: 'bold', align: 'left' },
       { id: 'cardNumber', label: 'Card No.', text: 'VSCT-ID-492019', x: 200, y: 745, size: 22, color: '#000000', weight: 'bold', align: 'left' },
       { id: 'mobile', label: 'Mobile', text: '+91 98765 43210', x: 200, y: 795, size: 22, color: '#000000', weight: 'bold', align: 'left' },

@@ -781,10 +781,10 @@ export const documentRouter = router({
       }
       try {
         const templates = await db.select().from(certificateTemplates);
-        // Automatically purge any legacy id_card rows containing designation or old x:430 coordinates
+        // Automatically purge any legacy id_card rows containing designation, old x:430, or old y:440
         for (const t of templates) {
           const jsonStr = typeof t.designJson === "string" ? t.designJson : JSON.stringify(t.designJson || {});
-          if (t.type === "id_card" && (jsonStr.includes('"designation"') || jsonStr.includes('"x":430'))) {
+          if (t.type === "id_card" && (jsonStr.includes('"designation"') || jsonStr.includes('"y":440') || jsonStr.includes('"x":430'))) {
             await db.delete(certificateTemplates).where(eq(certificateTemplates.id, t.id));
           }
         }
