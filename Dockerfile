@@ -15,6 +15,9 @@ RUN pnpm install
 # Copy application source
 COPY . .
 
+# Set Node memory limit for Docker build
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
 # Build application
 RUN pnpm build
 
