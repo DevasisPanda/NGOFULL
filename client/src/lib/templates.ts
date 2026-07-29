@@ -74,7 +74,7 @@ export const ID_CARD_TEMPLATE: TemplateConfig = {
   imgWidth: 1599,
   imgHeight: 1067,
   fields: [
-    { id: "photo", label: "Member Photo Box", text: "Member Photo", x: 215, y: 525, size: 160, color: "#2563eb", weight: "bold", align: "center" },
+    { id: "photo", label: "Member Photo Box", text: "Member Photo", x: 300, y: 525, size: 160, color: "#2563eb", weight: "bold", align: "center" },
     { id: "fullName", label: "Name", text: "", x: 200, y: 695, size: 24, color: "#ef4444", weight: "bold", align: "left" },
     { id: "cardNumber", label: "Card No.", text: "", x: 200, y: 745, size: 22, color: "#000000", weight: "bold", align: "left" },
     { id: "mobile", label: "Mobile", text: "", x: 200, y: 795, size: 22, color: "#000000", weight: "bold", align: "left" },

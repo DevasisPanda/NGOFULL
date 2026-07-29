@@ -781,10 +781,9 @@ export const documentRouter = router({
       }
       try {
         const templates = await db.select().from(certificateTemplates);
-        // Automatically purge any legacy id_card rows containing designation, old x:430, or old y:440
+        // Force delete any stored id_card template row from MySQL to guarantee x: 300, y: 525 override
         for (const t of templates) {
-          const jsonStr = typeof t.designJson === "string" ? t.designJson : JSON.stringify(t.designJson || {});
-          if (t.type === "id_card" && (jsonStr.includes('"designation"') || jsonStr.includes('"y":440') || jsonStr.includes('"x":430'))) {
+          if (t.type === "id_card") {
             await db.delete(certificateTemplates).where(eq(certificateTemplates.id, t.id));
           }
         }
