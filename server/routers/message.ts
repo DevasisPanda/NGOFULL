@@ -4,7 +4,7 @@ import { getDb } from "../db";
 import { messages, bulkMessageRecipients, users } from "../../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { sendWhatsAppMessage } from "../services/whatsapp";
+import { sendWhatsAppMessage, sendWhatsAppMedia } from "../services/whatsapp";
 
 export const messageRouter = router({
   // Send a message to a single user
@@ -14,6 +14,7 @@ export const messageRouter = router({
         recipientId: z.number(),
         subject: z.string().min(1, "Subject is required"),
         content: z.string().min(1, "Content is required"),
+        mediaUrl: z.string().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -28,6 +29,7 @@ export const messageRouter = router({
           messageType: "individual",
           subject: input.subject,
           content: input.content,
+          mediaUrl: input.mediaUrl || null,
           channel: "in_app",
           status: "sent",
           sentAt: new Date(),
@@ -36,10 +38,16 @@ export const messageRouter = router({
         // Fetch recipient to get their phone number for WhatsApp delivery
         const recipient = await db.select().from(users).where(eq(users.id, input.recipientId)).limit(1);
         if (recipient.length > 0 && recipient[0].phone) {
-          // Fire-and-forget WhatsApp message dispatch
-          sendWhatsAppMessage(recipient[0].phone, input.subject, input.content).catch(err => {
-            console.error("WhatsApp delivery failed for user:", input.recipientId, err);
-          });
+          const caption = `*${input.subject}*\n\n${input.content}\n\n_This is an automated message from Valmiki Samaj Charitable Trust._`;
+          if (input.mediaUrl) {
+            sendWhatsAppMedia(recipient[0].phone, caption, input.mediaUrl).catch(err => {
+              console.error("WhatsApp Media delivery failed for user:", input.recipientId, err);
+            });
+          } else {
+            sendWhatsAppMessage(recipient[0].phone, input.subject, input.content).catch(err => {
+              console.error("WhatsApp delivery failed for user:", input.recipientId, err);
+            });
+          }
         }
 
         return { success: true, message: "Message sent successfully to user." };
@@ -54,6 +62,7 @@ export const messageRouter = router({
       z.object({
         subject: z.string().min(1, "Subject is required"),
         content: z.string().min(1, "Content is required"),
+        mediaUrl: z.string().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -69,6 +78,7 @@ export const messageRouter = router({
           messageType: "bulk",
           subject: input.subject,
           content: input.content,
+          mediaUrl: input.mediaUrl || null,
           channel: "in_app",
           status: "sent",
           sentAt: new Date(),
@@ -93,9 +103,14 @@ export const messageRouter = router({
           // Dispatch WhatsApp messages for users with phone numbers
           const usersWithPhone = activeUsers.filter(u => u.phone);
           if (usersWithPhone.length > 0) {
+            const caption = `*${input.subject}*\n\n${input.content}\n\n_This is an automated message from Valmiki Samaj Charitable Trust._`;
             // Fire-and-forget bulk dispatch
             Promise.allSettled(
-              usersWithPhone.map(u => sendWhatsAppMessage(u.phone!, input.subject, input.content))
+              usersWithPhone.map(u => 
+                input.mediaUrl 
+                  ? sendWhatsAppMedia(u.phone!, caption, input.mediaUrl!)
+                  : sendWhatsAppMessage(u.phone!, input.subject, input.content)
+              )
             ).then(results => {
               const failed = results.filter(r => r.status === "rejected").length;
               if (failed > 0) {

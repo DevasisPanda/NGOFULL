@@ -9,10 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Megaphone, Send, Users, Info } from "lucide-react";
 
+import { ImageUpload } from "@/components/ui/ImageUpload";
+
 export default function SendBulkMessagePage() {
   const [formData, setFormData] = useState({
     subject: "",
     content: "",
+    mediaUrl: "",
   });
 
   const utils = trpc.useUtils();
@@ -28,6 +31,7 @@ export default function SendBulkMessagePage() {
       setFormData({
         subject: "",
         content: "",
+        mediaUrl: "",
       });
     },
     onError: (err) => {
@@ -46,6 +50,7 @@ export default function SendBulkMessagePage() {
       sendBulkMutation.mutate({
         subject: formData.subject,
         content: formData.content,
+        mediaUrl: formData.mediaUrl || undefined,
       });
     }
   };
@@ -108,6 +113,15 @@ export default function SendBulkMessagePage() {
                 rows={12}
                 className="resize-y"
               />
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <ImageUpload
+                label="Optional Media Attachment / Flyer Image"
+                value={formData.mediaUrl}
+                onChange={(url) => setFormData({ ...formData, mediaUrl: url })}
+              />
+              <p className="text-xs text-gray-500 mt-1">Upload an image or event banner to attach to this WhatsApp broadcast.</p>
             </div>
 
             <Button 

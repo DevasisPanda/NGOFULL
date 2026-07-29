@@ -9,11 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Mail, Send, Info } from "lucide-react";
 
+import { ImageUpload } from "@/components/ui/ImageUpload";
+
 export default function SendSingleMessagePage() {
   const [formData, setFormData] = useState({
     recipientId: "",
     subject: "",
     content: "",
+    mediaUrl: "",
   });
 
   const utils = trpc.useUtils();
@@ -26,6 +29,7 @@ export default function SendSingleMessagePage() {
         recipientId: "",
         subject: "",
         content: "",
+        mediaUrl: "",
       });
     },
     onError: (err) => {
@@ -44,6 +48,7 @@ export default function SendSingleMessagePage() {
       recipientId: parseInt(formData.recipientId),
       subject: formData.subject,
       content: formData.content,
+      mediaUrl: formData.mediaUrl || undefined,
     });
   };
 
@@ -115,6 +120,15 @@ export default function SendSingleMessagePage() {
                 required
                 rows={8}
               />
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <ImageUpload
+                label="Optional Media Attachment / Image"
+                value={formData.mediaUrl}
+                onChange={(url) => setFormData({ ...formData, mediaUrl: url })}
+              />
+              <p className="text-xs text-gray-500 mt-1">Upload an image or document to attach to this WhatsApp message.</p>
             </div>
 
             <Button 
