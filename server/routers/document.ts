@@ -780,7 +780,21 @@ export const documentRouter = router({
         });
       }
       try {
-        return await db.select().from(certificateTemplates);
+        const templates = await db.select().from(certificateTemplates);
+        const newMembershipUrl = "https://res.cloudinary.com/lbpicumc/image/upload/v1785349837/ngo-management/templates/membership_certificate_template.jpg";
+        const newIdCardUrl = "https://res.cloudinary.com/lbpicumc/image/upload/v1785349836/ngo-management/templates/generate_id_template.jpg";
+
+        for (const t of templates) {
+          if (t.type === "membership" && (!t.templateImage || t.templateImage.includes("dxmovdiru") || t.templateImage.includes("v1781611666"))) {
+            await db.update(certificateTemplates).set({ templateImage: newMembershipUrl }).where(eq(certificateTemplates.id, t.id));
+            t.templateImage = newMembershipUrl;
+          }
+          if (t.type === "id_card" && (!t.templateImage || t.templateImage.includes("dxmovdiru") || t.templateImage.includes("v1781611667"))) {
+            await db.update(certificateTemplates).set({ templateImage: newIdCardUrl }).where(eq(certificateTemplates.id, t.id));
+            t.templateImage = newIdCardUrl;
+          }
+        }
+        return templates;
       } catch (error) {
         console.error("Error fetching template configs:", error);
         throw new TRPCError({

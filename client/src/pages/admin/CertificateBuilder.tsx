@@ -26,7 +26,7 @@ const INITIAL_TEMPLATES: TemplateConfig[] = [
   {
     id: 'membership',
     name: 'Membership Certificate',
-    src: 'https://res.cloudinary.com/dxmovdiru/image/upload/v1781611666/ngo-management/templates/membership_certificate_template.jpg',
+    src: 'https://res.cloudinary.com/lbpicumc/image/upload/v1785349837/ngo-management/templates/membership_certificate_template.jpg',
     fields: [
       { id: 'fullName', label: 'Member Name', text: 'Devasis Panda', x: 450, y: 530, size: 36, color: '#1e293b', weight: 'bold', align: 'center' },
       { id: 'membershipNumber', label: 'Membership No.', text: 'VSCT-2026-001', x: 160, y: 740, size: 20, color: '#1e293b', weight: 'bold', align: 'center' },
@@ -76,7 +76,7 @@ const INITIAL_TEMPLATES: TemplateConfig[] = [
   {
     id: 'id_card',
     name: 'Generate ID',
-    src: 'https://res.cloudinary.com/dxmovdiru/image/upload/v1781611667/ngo-management/templates/generate_id_template.jpg',
+    src: 'https://res.cloudinary.com/lbpicumc/image/upload/v1785349836/ngo-management/templates/generate_id_template.jpg',
     fields: [
       { id: 'fullName', label: 'Name', text: 'Devasis Panda', x: 392, y: 655, size: 32, color: '#ef4444', weight: 'bold', align: 'center' },
       { id: 'designation', label: 'Designation', text: 'Senior Coordinator', x: 416, y: 380, size: 22, color: '#0f766e', weight: 'bold', align: 'center' },
