@@ -50,3 +50,40 @@ export const sendWhatsAppMessage = async (phone: string, subject: string, text: 
     throw error;
   }
 };
+
+/**
+ * Send WhatsApp Media / File Attachment (PDF Receipts, Certificates, Images)
+ */
+export const sendWhatsAppMedia = async (phone: string, caption: string, mediaUrl: string, filename?: string) => {
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || '6a427de1437f3';
+  const instanceId = process.env.WHATSAPP_INSTANCE_ID || '6A535D73DAE85';
+
+  let cleanNumber = phone.replace(/\D/g, '');
+  if (cleanNumber.length === 10) {
+    cleanNumber = '91' + cleanNumber;
+  }
+
+  try {
+    console.log(`[WhatsApp API] Dispatching media message to ${cleanNumber}...`);
+    const params: any = {
+      number: cleanNumber,
+      type: "media",
+      message: caption,
+      media_url: mediaUrl,
+      instance_id: instanceId,
+      access_token: accessToken,
+    };
+
+    if (filename) {
+      params.filename = filename;
+    }
+
+    const response = await axios.post('https://button.allexpert.in/api/send', null, { params });
+    console.log(`[WhatsApp Media API] Response:`, response.data);
+
+    return { success: true, data: response.data };
+  } catch (error: any) {
+    console.error(`[WhatsApp Media API] Error sending media to ${cleanNumber}:`, error.response?.data || error.message);
+    throw error;
+  }
+};
