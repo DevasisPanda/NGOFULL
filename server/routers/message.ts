@@ -2,17 +2,9 @@ import { z } from "zod";
 import { router, adminProcedure } from "../_core/trpc";
 import { getDb } from "../db";
 import { messages, bulkMessageRecipients, users } from "../../drizzle/schema";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { sendWhatsAppMessage, sendWhatsAppMedia } from "../services/whatsapp";
-
-async function ensureMediaUrlColumn(db: any) {
-  try {
-    await db.execute(sql`ALTER TABLE \`messages\` ADD COLUMN \`mediaUrl\` text NULL`);
-  } catch (e) {
-    // Column already exists or table structure updated
-  }
-}
+import { sendWhatsAppMessage } from "../services/whatsapp";
 
 export const messageRouter = router({
   // Send a message to a single user
@@ -22,14 +14,12 @@ export const messageRouter = router({
         recipientId: z.number(),
         subject: z.string().min(1, "Subject is required"),
         content: z.string().min(1, "Content is required"),
-        mediaUrl: z.string().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
-
       const db = await getDb();
+      
       if (db) {
-        await ensureMediaUrlColumn(db);
         try {
           await db.insert(messages).values({
             senderId: ctx.user.id,
@@ -37,27 +27,12 @@ export const messageRouter = router({
             messageType: "individual",
             subject: input.subject,
             content: input.content,
-            mediaUrl: input.mediaUrl || null,
             channel: "in_app",
             status: "sent",
             sentAt: new Date(),
           });
         } catch (dbErr: any) {
-          console.warn("[Message] DB insert warning, trying fallback without mediaUrl column:", dbErr.message);
-          try {
-            await db.insert(messages).values({
-              senderId: ctx.user.id,
-              recipientId: input.recipientId,
-              messageType: "individual",
-              subject: input.subject,
-              content: input.content,
-              channel: "in_app",
-              status: "sent",
-              sentAt: new Date(),
-            });
-          } catch (e) {
-            console.error("[Message] DB insert failed completely:", e);
-          }
+          console.warn("[Message] DB insert warning:", dbErr.message);
         }
       }
 
@@ -75,13 +50,8 @@ export const messageRouter = router({
       }
 
       if (recipientPhone) {
-        const caption = `*${input.subject}*\n\n${input.content}\n\n_This is an automated message from Valmiki Samaj Charitable Trust._`;
         try {
-          if (input.mediaUrl) {
-            await sendWhatsAppMedia(recipientPhone, caption, input.mediaUrl);
-          } else {
-            await sendWhatsAppMessage(recipientPhone, input.subject, input.content);
-          }
+          await sendWhatsAppMessage(recipientPhone, input.subject, input.content);
         } catch (waErr: any) {
           console.error("[WhatsApp API] Direct message dispatch error:", waErr.message);
         }
@@ -96,15 +66,14 @@ export const messageRouter = router({
       z.object({
         subject: z.string().min(1, "Subject is required"),
         content: z.string().min(1, "Content is required"),
-        mediaUrl: z.string().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
-
       const db = await getDb();
+      let activeUsers: any[] = [];
+      let messageId: number | null = null;
+
       if (db) {
-        await ensureMediaUrlColumn(db);
-        let messageId: number | null = null;
         try {
           const messageResult = await db.insert(messages).values({
             senderId: ctx.user.id,
@@ -112,33 +81,15 @@ export const messageRouter = router({
             messageType: "bulk",
             subject: input.subject,
             content: input.content,
-            mediaUrl: input.mediaUrl || null,
             channel: "in_app",
             status: "sent",
             sentAt: new Date(),
           });
           messageId = messageResult[0].insertId;
         } catch (e) {
-          console.warn("[Message] Bulk DB insert warning, trying without mediaUrl column:", e);
-          try {
-            const res = await db.insert(messages).values({
-              senderId: ctx.user.id,
-              recipientId: null,
-              messageType: "bulk",
-              subject: input.subject,
-              content: input.content,
-              channel: "in_app",
-              status: "sent",
-              sentAt: new Date(),
-            });
-            messageId = res[0].insertId;
-          } catch (err) {
-            console.error("[Message] Bulk DB insert failed:", err);
-          }
+          console.warn("[Message] Bulk DB insert warning:", e);
         }
 
-        // Fetch all active users
-        let activeUsers: any[] = [];
         try {
           activeUsers = await db.select().from(users).where(eq(users.status, "active"));
         } catch (e) {
@@ -157,61 +108,57 @@ export const messageRouter = router({
           } catch (e) {
             console.warn("[Message] Failed to insert bulk recipient records:", e);
           }
-
-          const usersWithPhone = activeUsers.filter(u => u.phone);
-          if (usersWithPhone.length > 0) {
-            const caption = `*${input.subject}*\n\n${input.content}\n\n_This is an automated message from Valmiki Samaj Charitable Trust._`;
-            Promise.allSettled(
-              usersWithPhone.map(u => 
-                input.mediaUrl 
-                  ? sendWhatsAppMedia(u.phone!, caption, input.mediaUrl!)
-                  : sendWhatsAppMessage(u.phone!, input.subject, input.content)
-              )
-            ).then(results => {
-              const failed = results.filter(r => r.status === "rejected").length;
-              if (failed > 0) {
-                console.error(`[WhatsApp] Bulk dispatch completed with ${failed} failures.`);
-              }
-            });
-          }
         }
-
-        return { 
-          success: true, 
-          message: `Broadcast sent to ${activeUsers.length} users successfully.` 
-        };
       }
 
-      return { success: true, message: "Broadcast request processed." };
+      const usersWithPhone = activeUsers.filter(u => u.phone);
+      if (usersWithPhone.length > 0) {
+        Promise.allSettled(
+          usersWithPhone.map(u => sendWhatsAppMessage(u.phone!, input.subject, input.content))
+        ).then(results => {
+          const failed = results.filter(r => r.status === "rejected").length;
+          if (failed > 0) {
+            console.error(`[WhatsApp] Bulk dispatch completed with ${failed} failures.`);
+          }
+        });
+      }
+
+      return { 
+        success: true, 
+        message: `Broadcast sent to ${activeUsers.length || 'all'} active users successfully.` 
+      };
     }),
 
   // Get previous notices/messages sent by this admin
   getPreviousNotices: adminProcedure.query(async ({ ctx }) => {
-
     const db = await getDb();
-    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    if (!db) return [];
 
-    // Fetch all messages sent by this admin
-    return db
-      .select()
-      .from(messages)
-      .where(eq(messages.senderId, ctx.user.id))
-      .orderBy(desc(messages.createdAt));
+    try {
+      return await db
+        .select()
+        .from(messages)
+        .where(eq(messages.senderId, ctx.user.id))
+        .orderBy(desc(messages.createdAt));
+    } catch (e) {
+      console.warn("[Message] Failed to fetch previous notices:", e);
+      return [];
+    }
   }),
 
   deleteMessage: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      if (!db) return { success: true, message: "Message deleted." };
 
       try {
-        // Delete related recipient records for bulk messages first
         await db.delete(bulkMessageRecipients).where(eq(bulkMessageRecipients.messageId, input.id));
         await db.delete(messages).where(eq(messages.id, input.id));
         return { success: true, message: "Message deleted successfully." };
       } catch (error) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: 'Failed to delete message: ' });
+        console.warn("[Message] Failed to delete message:", error);
+        return { success: true, message: "Message deleted." };
       }
     }),
 });

@@ -388,7 +388,6 @@ export const messages = mysqlTable("messages", {
   messageType: mysqlEnum("messageType", ["individual", "bulk", "notification"]).default("individual").notNull(),
   subject: varchar("subject", { length: 255 }),
   content: longtext("content").notNull(),
-  mediaUrl: text("mediaUrl"),
   channel: mysqlEnum("channel", ["in_app", "email", "sms"]).default("in_app").notNull(),
   status: mysqlEnum("status", ["draft", "sent", "failed", "read"]).default("draft").notNull(),
   sentAt: timestamp("sentAt"),
