@@ -10,6 +10,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { Users, Plus, Pencil, Trash2, Eye, EyeOff, ShieldCheck, ArrowUp, ArrowDown } from "lucide-react";
 
+const getAdminMemberImage = (m: any) => {
+  if (!m.image) return `/assets/CEO${m.displayOrder || 1}.jpeg`;
+  if (m.image.startsWith('/assets/') || m.image.startsWith('http') || m.image.startsWith('data:')) {
+    return m.image;
+  }
+  return `/assets/CEO${m.displayOrder || 1}.jpeg`;
+};
+
 export default function ManagementBodyAdminPage() {
   const utils = trpc.useUtils();
   const { data: members, isLoading } = trpc.managementBody.adminGetAll.useQuery();
@@ -186,7 +194,7 @@ export default function ManagementBodyAdminPage() {
                 <div key={m.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex flex-col justify-between hover:shadow-md transition-shadow relative">
                   <div className="flex items-start gap-4">
                     <img 
-                      src={m.image} 
+                      src={getAdminMemberImage(m)} 
                       alt={m.name} 
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name)}&background=061941&color=fed813&size=256`;
