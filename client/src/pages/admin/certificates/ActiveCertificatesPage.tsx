@@ -363,8 +363,8 @@ export default function ActiveCertificatesPage() {
                 <VerifiableDocument
                   templateId="id_card"
                   fieldValues={{
+                    photo: selectedPreviewCert.profileImage || "",
                     fullName: selectedPreviewCert.recipientName || "",
-                    designation: selectedPreviewCert.description || "Trust Member",
                     cardNumber: selectedPreviewCert.certificateNumber,
                     mobile: selectedPreviewCert.memberPhone || "N/A",
                     email: selectedPreviewCert.recipientEmail || "N/A",
@@ -375,17 +375,7 @@ export default function ActiveCertificatesPage() {
                   dbTemplates={dbTemplates}
                   cardRef={previewRef}
                   className="max-w-[320px] mx-auto rounded-2xl"
-                >
-                  <div className="absolute top-[39.3%] left-[18.7%] -translate-x-1/2 w-[11.5%] aspect-[1/1] rounded-xl overflow-hidden border border-gray-100 shadow bg-white flex items-center justify-center">
-                    {selectedPreviewCert.profileImage ? (
-                      <img src={selectedPreviewCert.profileImage} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-teal-800 text-[14px] font-bold bg-teal-100">
-                        {selectedPreviewCert.recipientName?.slice(0, 2).toUpperCase() || 'MB'}
-                      </div>
-                    )}
-                  </div>
-                </VerifiableDocument>
+                />
               ) : selectedPreviewCert.type === 'appointment' ? (
                 <VerifiableDocument
                   templateId="appointment"

@@ -303,23 +303,14 @@ export default function IssueCertificatePage() {
             <div className="py-4 flex justify-center">
               <VerifiableDocument
                 templateId={preview.template.id}
-                fieldValues={preview.fieldValues}
+                fieldValues={{
+                  ...preview.fieldValues,
+                  photo: selectedUser?.profileImage || preview.fieldValues.photo || "",
+                }}
                 dbTemplates={dbTemplates}
                 cardRef={previewRef}
                 className={preview.template.id === "id_card" ? "max-w-[320px] mx-auto rounded-2xl" : "max-w-2xl mx-auto rounded-lg"}
-              >
-                {preview.template.id === "id_card" && (
-                  <div className="absolute top-[39.3%] left-[18.7%] -translate-x-1/2 w-[11.5%] aspect-[1/1] rounded-xl overflow-hidden border border-gray-100 shadow bg-white flex items-center justify-center">
-                    {selectedUser?.profileImage ? (
-                      <img src={selectedUser.profileImage} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-teal-800 text-[14px] font-bold bg-teal-100">
-                        {selectedUser?.name?.slice(0, 2).toUpperCase() || 'MB'}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </VerifiableDocument>
+              />
             </div>
           )}
 
