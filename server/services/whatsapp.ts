@@ -6,7 +6,7 @@ import axios from 'axios';
 
 export const sendWhatsAppMessage = async (phone: string, subject: string, text: string) => {
   const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || '6a427de1437f3';
-  const instanceId = process.env.WHATSAPP_INSTANCE_ID || '609ACF283XXXX';
+  const instanceId = process.env.WHATSAPP_INSTANCE_ID || '6A535D73DAE85';
 
   const formattedMessage = `*${subject}*\n\n${text}\n\n_This is an automated message from Valmiki Samaj Charitable Trust._`;
 
@@ -16,19 +16,8 @@ export const sendWhatsAppMessage = async (phone: string, subject: string, text: 
     cleanNumber = '91' + cleanNumber;
   }
 
-  // If credentials are in mock mode (using default placeholder / config not customized)
-  // we can still trigger the real API if they have set custom ones, or log it cleanly
-  if (instanceId === '609ACF283XXXX') {
-    console.log("=========================================");
-    console.log(`[WhatsApp Mock] Sending message to: ${cleanNumber}`);
-    console.log(`[WhatsApp Mock] Payload:\n${formattedMessage}`);
-    console.log("=========================================");
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return { success: true, mock: true };
-  }
-
   try {
-    console.log(`[WhatsApp API] Dispatching message to ${cleanNumber}...`);
+    console.log(`[WhatsApp API] Dispatching live message to ${cleanNumber}...`);
     const response = await axios.post('https://button.allexpert.in/api/send', null, {
       params: {
         number: cleanNumber,
