@@ -295,8 +295,8 @@ export default function ManagementBodyAdminPage() {
             </div>
 
             <div>
-              <Label className="font-bold">Detailed Biography</Label>
-              <Textarea placeholder="Enter full biography and background details..." rows={4} value={formData.bio} onChange={(e) => setFormData({ ...formData, bio: e.target.value })} />
+              <Label className="font-bold">Detailed Biography (Unlimited text & paragraphs)</Label>
+              <Textarea placeholder="Enter full biography, career journey, accomplishments, education, and background details..." rows={10} value={formData.bio} onChange={(e) => setFormData({ ...formData, bio: e.target.value })} />
             </div>
 
             {/* Key Points / Highlights Builder */}
