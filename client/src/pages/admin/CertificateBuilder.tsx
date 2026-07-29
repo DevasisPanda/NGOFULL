@@ -245,6 +245,13 @@ export default function CertificateBuilder() {
     }));
   };
 
+  const resetToDefaultLayout = () => {
+    const staticTemplate = INITIAL_TEMPLATES.find(t => t.id === activeTemplateId);
+    if (!staticTemplate) return;
+    setTemplates(prev => prev.map(t => t.id === activeTemplateId ? { ...staticTemplate } : t));
+    toast.success("Reset to clean default layout! Click 'Apply Layout for Everyone' to save.");
+  };
+
   const copyConfigJson = () => {
     if (!activeTemplate) return;
     const configToCopy = activeTemplate.fields.map(f => ({
@@ -304,25 +311,25 @@ export default function CertificateBuilder() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    {/* X Coordinate */}
+                    {/* X Position */}
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">X Position: {field.x}</label>
                       <input 
                         type="range" 
                         min="0" 
-                        max="2000" 
+                        max={activeTemplate.id === 'membership' || activeTemplate.id === 'donation' ? "904" : "1599"} 
                         value={field.x}
                         onChange={(e) => updateField(field.id, { x: parseInt(e.target.value) })}
                         className="w-full accent-primary"
                       />
                     </div>
-                    {/* Y Coordinate */}
+                    {/* Y Position */}
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">Y Position: {field.y}</label>
                       <input 
                         type="range" 
                         min="0" 
-                        max="2000" 
+                        max={activeTemplate.id === 'membership' || activeTemplate.id === 'donation' ? "1354" : "1067"} 
                         value={field.y}
                         onChange={(e) => updateField(field.id, { y: parseInt(e.target.value) })}
                         className="w-full accent-primary"
@@ -331,13 +338,13 @@ export default function CertificateBuilder() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                     {/* Font Size */}
+                     {/* Font Size / Box Size */}
                      <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">Font Size: {field.size}px</label>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">{field.id === 'photo' ? 'Box Width:' : 'Font Size:'} {field.size}px</label>
                       <input 
                         type="range" 
                         min="10" 
-                        max="120" 
+                        max="300" 
                         value={field.size}
                         onChange={(e) => updateField(field.id, { size: parseInt(e.target.value) })}
                         className="w-full accent-primary"
@@ -388,17 +395,17 @@ export default function CertificateBuilder() {
           </div>
 
           <button 
-            onClick={copyConfigJson}
-            className="w-full mt-8 bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+            onClick={resetToDefaultLayout}
+            className="w-full mt-6 bg-amber-600 text-white font-bold py-2.5 px-4 rounded-lg shadow hover:bg-amber-700 transition-colors flex items-center justify-center gap-2 text-sm"
           >
-            <span className="material-symbols-outlined">content_copy</span>
-            Copy Final Configuration
+            <span className="material-symbols-outlined text-sm">restart_alt</span>
+            Reset to Clean Default Layout
           </button>
 
           <button 
             onClick={saveConfigToDb}
             disabled={saveMutation.isPending}
-            className="w-full mt-4 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-blue-400"
+            className="w-full mt-3 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-blue-400"
           >
             <span className="material-symbols-outlined">save</span>
             {saveMutation.isPending ? 'Saving...' : 'Apply Layout for Everyone'}
