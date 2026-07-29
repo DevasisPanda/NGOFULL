@@ -74,14 +74,14 @@ export const ID_CARD_TEMPLATE: TemplateConfig = {
   imgWidth: 1599,
   imgHeight: 1067,
   fields: [
-    { id: "fullName", label: "Name", text: "", x: 392, y: 655, size: 32, color: "#ef4444", weight: "bold", align: "center" },
-    { id: "designation", label: "Designation", text: "", x: 416, y: 380, size: 22, color: "#0f766e", weight: "bold", align: "center" },
-    { id: "cardNumber", label: "Card No.", text: "", x: 275, y: 685, size: 24, color: "#1e293b", weight: "bold", align: "left" },
-    { id: "mobile", label: "Mobile", text: "", x: 157, y: 730, size: 24, color: "#1e293b", weight: "bold", align: "left" },
-    { id: "email", label: "Email", text: "", x: 150, y: 780, size: 20, color: "#1e293b", weight: "bold", align: "left" },
-    { id: "city", label: "City", text: "", x: 110, y: 830, size: 24, color: "#1e293b", weight: "bold", align: "left" },
-    { id: "issueDate", label: "Issue Date", text: "", x: 1247, y: 848, size: 24, color: "#0f2454", weight: "bold", align: "left" },
-    { id: "expiryDate", label: "Valid Till", text: "", x: 1247, y: 896, size: 24, color: "#0f2454", weight: "bold", align: "left" },
+    { id: "photo", label: "Member Photo Box", text: "Member Photo", x: 215, y: 440, size: 160, color: "#2563eb", weight: "bold", align: "center" },
+    { id: "fullName", label: "Name", text: "", x: 200, y: 695, size: 24, color: "#ef4444", weight: "bold", align: "left" },
+    { id: "cardNumber", label: "Card No.", text: "", x: 200, y: 745, size: 22, color: "#000000", weight: "bold", align: "left" },
+    { id: "mobile", label: "Mobile", text: "", x: 200, y: 795, size: 22, color: "#000000", weight: "bold", align: "left" },
+    { id: "email", label: "Email", text: "", x: 200, y: 845, size: 20, color: "#000000", weight: "bold", align: "left" },
+    { id: "city", label: "City", text: "", x: 200, y: 895, size: 22, color: "#000000", weight: "bold", align: "left" },
+    { id: "issueDate", label: "Joining Date", text: "", x: 1280, y: 845, size: 22, color: "#000000", weight: "bold", align: "left" },
+    { id: "expiryDate", label: "Validity Date", text: "", x: 1280, y: 895, size: 22, color: "#000000", weight: "bold", align: "left" },
   ],
 };
 
