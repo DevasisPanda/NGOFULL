@@ -56,7 +56,7 @@ export const ACHIEVEMENT_TEMPLATE: TemplateConfig = {
 export const MEMBERSHIP_TEMPLATE: TemplateConfig = {
   id: "membership",
   name: "Membership Certificate",
-  src: "https://res.cloudinary.com/lbpicumc/image/upload/v1785349837/ngo-management/templates/membership_certificate_template.jpg",
+  src: "https://res.cloudinary.com/lbpicumc/image/upload/v1785351420/ngo-management/templates/membership_certificate_template.jpg",
   imgWidth: 904,
   imgHeight: 1354,
   fields: [
@@ -70,7 +70,7 @@ export const MEMBERSHIP_TEMPLATE: TemplateConfig = {
 export const ID_CARD_TEMPLATE: TemplateConfig = {
   id: "id_card",
   name: "ID Card",
-  src: "https://res.cloudinary.com/lbpicumc/image/upload/v1785349836/ngo-management/templates/generate_id_template.jpg",
+  src: "https://res.cloudinary.com/lbpicumc/image/upload/v1785351419/ngo-management/templates/generate_id_template.jpg",
   imgWidth: 1599,
   imgHeight: 1067,
   fields: [
