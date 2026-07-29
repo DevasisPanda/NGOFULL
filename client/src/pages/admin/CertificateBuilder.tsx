@@ -97,12 +97,15 @@ export default function CertificateBuilder() {
   
   const activeTemplate = templates.find(t => t.id === activeTemplateId);
 
-  // Load and merge templates from DB
+  const [hasInitializedFromDb, setHasInitializedFromDb] = useState(false);
+
+  // Load and merge templates from DB once on mount
   const utils = trpc.useUtils();
   const { data: dbTemplates } = trpc.document.getTemplateConfigs.useQuery();
   
   useEffect(() => {
-    if (dbTemplates) {
+    if (dbTemplates && !hasInitializedFromDb) {
+      setHasInitializedFromDb(true);
       setTemplates(prev => prev.map(staticTpl => {
         const dbTpl = dbTemplates.find(t => t.type === staticTpl.id);
         if (!dbTpl) return staticTpl;
@@ -122,13 +125,13 @@ export default function CertificateBuilder() {
           ...staticTpl,
           src: dbTpl.templateImage || staticTpl.src,
           fields: staticTpl.fields.map(f => {
-            const dbField = fields.find(df => df.id === f.id);
+            const dbField = Array.isArray(fields) ? fields.find(df => df.id === f.id) : undefined;
             return dbField ? { ...f, ...dbField } : f;
           })
         };
       }));
     }
-  }, [dbTemplates]);
+  }, [dbTemplates, hasInitializedFromDb]);
 
   const saveMutation = trpc.document.saveTemplateConfig.useMutation({
     onSuccess: (res) => {
@@ -252,6 +255,9 @@ export default function CertificateBuilder() {
       if (staticTemplate) {
         setTemplates(prev => prev.map(t => t.id === activeTemplateId ? { ...staticTemplate } : t));
       }
+      utils.document.getTemplateConfigs.setData(undefined, (old: any) => {
+        return old ? old.filter((t: any) => t.type !== activeTemplateId) : [];
+      });
       utils.document.getTemplateConfigs.invalidate();
     },
     onError: (err) => {

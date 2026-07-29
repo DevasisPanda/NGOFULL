@@ -814,13 +814,15 @@ export const documentRouter = router({
           .where(eq(certificateTemplates.type, input.type))
           .limit(1);
 
+        const jsonStr = typeof input.designJson === "string" ? input.designJson : JSON.stringify(input.designJson);
+
         if (existing.length > 0) {
           await db
             .update(certificateTemplates)
             .set({
               name: input.name,
               templateImage: input.templateImage || existing[0].templateImage,
-              designJson: input.designJson,
+              designJson: jsonStr,
               updatedAt: new Date(),
             })
             .where(eq(certificateTemplates.type, input.type));
@@ -829,7 +831,7 @@ export const documentRouter = router({
             name: input.name,
             type: input.type,
             templateImage: input.templateImage || "",
-            designJson: input.designJson,
+            designJson: jsonStr,
           });
         }
         return { success: true, message: "Template layout saved successfully" };
