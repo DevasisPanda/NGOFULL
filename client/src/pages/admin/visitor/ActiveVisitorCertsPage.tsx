@@ -299,6 +299,7 @@ export default function ActiveVisitorCertsPage() {
               <VerifiableDocument
                 templateId="id_card"
                 fieldValues={{
+                  photo: selectedPreviewCert.certificateImage || selectedPreviewCert.visitorPhoto || "",
                   fullName: selectedPreviewCert.title || "",
                   designation: "TEMPORARY VISITOR",
                   cardNumber: selectedPreviewCert.certificateNumber,

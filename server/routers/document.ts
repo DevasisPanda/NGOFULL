@@ -184,6 +184,7 @@ export const documentRouter = router({
         certificateType: z.enum(["membership", "achievement", "visitor", "volunteer"]),
         title: z.string(),
         description: z.string().optional(),
+        certificateImage: z.string().optional(),
         expiryDate: z.date().optional(),
       })
     )
@@ -206,6 +207,7 @@ export const documentRouter = router({
           certificateNumber,
           title: input.title,
           description: input.description,
+          certificateImage: input.certificateImage || "",
           issueDate: new Date(),
           expiryDate: input.expiryDate,
           qrCode: `qr_cert_${certificateNumber}`,

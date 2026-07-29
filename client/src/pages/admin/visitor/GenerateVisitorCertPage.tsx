@@ -40,6 +40,7 @@ export default function GenerateVisitorCertPage() {
       setPreview({
         template: visitorTemplate,
         fieldValues: {
+          photo: formData.visitorPhoto || "",
           fullName: formData.fullName || "Visitor",
           designation: formData.designation || "Visitor",
           cardNumber: `VSCT-VIS-${Date.now().toString(36).toUpperCase()}`,
@@ -70,6 +71,7 @@ export default function GenerateVisitorCertPage() {
       certificateType: "visitor",
       title: formData.fullName,
       description: formData.designation || "Official Visitor",
+      certificateImage: formData.visitorPhoto || "",
       expiryDate: formData.expiryDate ? new Date(formData.expiryDate) : undefined,
     });
   };
