@@ -481,6 +481,7 @@ export default function MemberDetailsPage() {
               <VerifiableDocument
                 templateId="id_card"
                 fieldValues={{
+                  photo: member.user?.profileImage || "",
                   fullName: member.user?.name || "",
                   designation: member.user?.designation || "Trust Member",
                   cardNumber: latestIDCard.cardNumber,
@@ -493,18 +494,7 @@ export default function MemberDetailsPage() {
                 dbTemplates={dbTemplates}
                 cardRef={idCardRefMP}
                 className="max-w-lg mx-auto rounded-lg"
-              >
-                {/* Profile Photo Overlay */}
-                <div className="absolute top-[39.3%] left-[18.7%] -translate-x-1/2 w-[11.5%] aspect-[1/1] rounded-xl overflow-hidden shadow-sm bg-white border border-gray-100 flex items-center justify-center">
-                  {member.user?.profileImage ? (
-                    <img src={member.user.profileImage} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-teal-800 text-[2.5cqw] font-bold bg-teal-100">
-                      {member.user?.name?.slice(0, 2).toUpperCase() || 'MB'}
-                    </div>
-                  )}
-                </div>
-              </VerifiableDocument>
+              />
             </div>
           )}
 

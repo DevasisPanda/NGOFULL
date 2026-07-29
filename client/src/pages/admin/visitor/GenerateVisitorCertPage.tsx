@@ -168,13 +168,7 @@ export default function GenerateVisitorCertPage() {
                 dbTemplates={dbTemplates}
                 cardRef={previewRef}
                 className="max-w-[320px] mx-auto rounded-xl relative"
-              >
-                {preview.fieldValues.visitorPhoto && (
-                  <div className="absolute top-[39.3%] left-[18.7%] -translate-x-1/2 w-[11.5%] aspect-[1/1] rounded-xl overflow-hidden border border-gray-100 shadow bg-white flex items-center justify-center">
-                    <img src={preview.fieldValues.visitorPhoto} alt="Visitor" className="w-full h-full object-cover" />
-                  </div>
-                )}
-              </VerifiableDocument>
+              />
             </div>
           )}
 

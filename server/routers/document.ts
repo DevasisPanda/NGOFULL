@@ -253,6 +253,7 @@ export const documentRouter = router({
             certificateNumber: certificates.certificateNumber,
             title: certificates.title,
             description: certificates.description,
+            certificateImage: certificates.certificateImage,
             issueDate: certificates.issueDate,
             expiryDate: certificates.expiryDate,
             qrCode: certificates.qrCode,
