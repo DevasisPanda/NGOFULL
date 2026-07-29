@@ -173,6 +173,29 @@ Under his leadership, the trust has resolved hundreds of community disputes peac
   },
 ];
 
+async function ensureManagementTable(db: any) {
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS \`management_members\` (
+        \`id\` int AUTO_INCREMENT PRIMARY KEY,
+        \`displayOrder\` int NOT NULL DEFAULT 1,
+        \`name\` varchar(255) NOT NULL,
+        \`role\` varchar(255) NOT NULL,
+        \`image\` text NOT NULL,
+        \`quote\` text,
+        \`bio\` text,
+        \`points\` json,
+        \`tag\` varchar(255),
+        \`status\` enum('active','hidden') NOT NULL DEFAULT 'active',
+        \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+  } catch (e) {
+    console.warn("[ManagementBody] Auto table creation notice:", e);
+  }
+}
+
 export const managementBodyRouter = router({
   // Public: Get all active members (auto-creates table & seeds if empty, failsafe fallback)
   getAll: publicProcedure.query(async () => {
@@ -182,27 +205,7 @@ export const managementBodyRouter = router({
         return DEFAULT_MANAGEMENT_MEMBERS.map((m, idx) => ({ id: idx + 1, ...m, points: JSON.parse(m.points) }));
       }
 
-      // Auto-create table if not exists
-      try {
-        await db.execute(sql`
-          CREATE TABLE IF NOT EXISTS \`management_members\` (
-            \`id\` int AUTO_INCREMENT PRIMARY KEY,
-            \`displayOrder\` int NOT NULL DEFAULT 1,
-            \`name\` varchar(255) NOT NULL,
-            \`role\` varchar(255) NOT NULL,
-            \`image\` text NOT NULL,
-            \`quote\` text,
-            \`bio\` text,
-            \`points\` json,
-            \`tag\` varchar(255),
-            \`status\` enum('active','hidden') NOT NULL DEFAULT 'active',
-            \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-        `);
-      } catch (e) {
-        console.warn("[ManagementBody] Auto table creation notice:", e);
-      }
+      await ensureManagementTable(db);
 
       let members = await db
         .select()
@@ -243,6 +246,7 @@ export const managementBodyRouter = router({
       try {
         const db = await getDb();
         if (db) {
+          await ensureManagementTable(db);
           const result = await db
             .select()
             .from(managementMembers)
@@ -275,30 +279,41 @@ export const managementBodyRouter = router({
 
   // Admin: Get all members (active & hidden)
   adminGetAll: adminProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Database not available",
-      });
-    }
-
     try {
-      const members = await db
+      const db = await getDb();
+      if (!db) {
+        return DEFAULT_MANAGEMENT_MEMBERS.map((m, idx) => ({ id: idx + 1, ...m, points: JSON.parse(m.points) }));
+      }
+
+      await ensureManagementTable(db);
+
+      let members = await db
         .select()
         .from(managementMembers)
         .orderBy(asc(managementMembers.displayOrder));
+
+      if (members.length === 0) {
+        console.log("[ManagementBody] Seeding 12 default management members for admin...");
+        for (const defaultMember of DEFAULT_MANAGEMENT_MEMBERS) {
+          await db.insert(managementMembers).values({
+            ...defaultMember,
+            status: defaultMember.status as "active" | "hidden",
+          });
+        }
+
+        members = await db
+          .select()
+          .from(managementMembers)
+          .orderBy(asc(managementMembers.displayOrder));
+      }
 
       return members.map((m) => ({
         ...m,
         points: typeof m.points === "string" ? JSON.parse(m.points) : m.points || [],
       }));
     } catch (error) {
-      console.error("Error fetching admin management members:", error);
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to fetch management members",
-      });
+      console.error("[ManagementBody] adminGetAll failed, serving fallback 12 members:", error);
+      return DEFAULT_MANAGEMENT_MEMBERS.map((m, idx) => ({ id: idx + 1, ...m, points: JSON.parse(m.points) }));
     }
   }),
 
@@ -327,6 +342,7 @@ export const managementBodyRouter = router({
       }
 
       try {
+        await ensureManagementTable(db);
         const pointsStr = typeof input.points === "string" ? input.points : JSON.stringify(input.points || []);
 
         await db.insert(managementMembers).values({
