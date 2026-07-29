@@ -780,6 +780,14 @@ export const documentRouter = router({
         });
       }
       try {
+        const templates = await db.select().from(certificateTemplates);
+        // Automatically purge any legacy id_card rows containing designation or old x:430 coordinates
+        for (const t of templates) {
+          const jsonStr = typeof t.designJson === "string" ? t.designJson : JSON.stringify(t.designJson || {});
+          if (t.type === "id_card" && (jsonStr.includes('"designation"') || jsonStr.includes('"x":430'))) {
+            await db.delete(certificateTemplates).where(eq(certificateTemplates.id, t.id));
+          }
+        }
         return await db.select().from(certificateTemplates);
       } catch (error) {
         console.error("Error fetching template configs:", error);
