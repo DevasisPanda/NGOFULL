@@ -18,22 +18,26 @@ export const sendWhatsAppMessage = async (phone: string, subject: string, text: 
 
   try {
     console.log(`[WhatsApp API] Dispatching live message to ${cleanNumber}...`);
-    const response = await axios.post('https://button.allexpert.in/api/send', null, {
-      params: {
+    const url = `https://button.allexpert.in/api/send?number=${cleanNumber}&type=text&message=${encodeURIComponent(formattedMessage)}&instance_id=${instanceId}&access_token=${accessToken}`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         number: cleanNumber,
         type: "text",
         message: formattedMessage,
         instance_id: instanceId,
-        access_token: accessToken
-      }
+        access_token: accessToken,
+      })
     });
 
-    console.log(`[WhatsApp API] Response:`, response.data);
+    const responseData = await response.json();
+    console.log(`[WhatsApp API] Response:`, responseData);
     
     // Check if response contains limit messages (even if status is 200/success)
-    const responseData = response.data;
     if (responseData && typeof responseData === 'object') {
-      const msg = responseData.message || '';
+      const msg = typeof responseData.message === 'string' ? responseData.message : '';
       if (msg.toLowerCase().includes('limit') || msg.toLowerCase().includes('exceeded')) {
         console.warn(`[WhatsApp API] WARNING: Message to ${cleanNumber} accepted by endpoint but not delivered: ${msg}`);
         return { success: false, error: 'limit_exceeded', data: responseData };
@@ -44,10 +48,10 @@ export const sendWhatsAppMessage = async (phone: string, subject: string, text: 
       }
     }
 
-    return { success: true, data: response.data };
+    return { success: true, data: responseData };
   } catch (error: any) {
-    console.error(`[WhatsApp API] Error sending message to ${cleanNumber}:`, error.response?.data || error.message);
-    throw error;
+    console.error(`[WhatsApp API] Error sending message to ${cleanNumber}:`, error.message || error);
+    return { success: false, error: error.message };
   }
 };
 
