@@ -3,7 +3,7 @@ import { router, publicProcedure, adminProcedure } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "../db";
 import { managementMembers } from "../../drizzle/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, sql } from "drizzle-orm";
 
 const DEFAULT_MANAGEMENT_MEMBERS = [
   {
@@ -174,17 +174,36 @@ Under his leadership, the trust has resolved hundreds of community disputes peac
 ];
 
 export const managementBodyRouter = router({
-  // Public: Get all active members (autoseeds if empty)
+  // Public: Get all active members (auto-creates table & seeds if empty, failsafe fallback)
   getAll: publicProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Database not available",
-      });
-    }
-
     try {
+      const db = await getDb();
+      if (!db) {
+        return DEFAULT_MANAGEMENT_MEMBERS.map((m, idx) => ({ id: idx + 1, ...m, points: JSON.parse(m.points) }));
+      }
+
+      // Auto-create table if not exists
+      try {
+        await db.execute(sql`
+          CREATE TABLE IF NOT EXISTS \`management_members\` (
+            \`id\` int AUTO_INCREMENT PRIMARY KEY,
+            \`displayOrder\` int NOT NULL DEFAULT 1,
+            \`name\` varchar(255) NOT NULL,
+            \`role\` varchar(255) NOT NULL,
+            \`image\` text NOT NULL,
+            \`quote\` text,
+            \`bio\` text,
+            \`points\` json,
+            \`tag\` varchar(255),
+            \`status\` enum('active','hidden') NOT NULL DEFAULT 'active',
+            \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `);
+      } catch (e) {
+        console.warn("[ManagementBody] Auto table creation notice:", e);
+      }
+
       let members = await db
         .select()
         .from(managementMembers)
@@ -212,11 +231,8 @@ export const managementBodyRouter = router({
         points: typeof m.points === "string" ? JSON.parse(m.points) : m.points || [],
       }));
     } catch (error) {
-      console.error("Error fetching management body:", error);
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to fetch management body members",
-      });
+      console.error("[ManagementBody] DB Query failed, serving fallback 12 members:", error);
+      return DEFAULT_MANAGEMENT_MEMBERS.map((m, idx) => ({ id: idx + 1, ...m, points: JSON.parse(m.points) }));
     }
   }),
 
@@ -224,37 +240,37 @@ export const managementBodyRouter = router({
   getById: publicProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Database not available",
-        });
-      }
-
       try {
-        const result = await db
-          .select()
-          .from(managementMembers)
-          .where(eq(managementMembers.id, input.id))
-          .limit(1);
+        const db = await getDb();
+        if (db) {
+          const result = await db
+            .select()
+            .from(managementMembers)
+            .where(eq(managementMembers.id, input.id))
+            .limit(1);
 
-        if (result.length === 0) {
-          return null;
+          if (result.length > 0) {
+            const m = result[0];
+            return {
+              ...m,
+              points: typeof m.points === "string" ? JSON.parse(m.points) : m.points || [],
+            };
+          }
         }
-
-        const m = result[0];
-        return {
-          ...m,
-          points: typeof m.points === "string" ? JSON.parse(m.points) : m.points || [],
-        };
       } catch (error) {
-        console.error("Error fetching member by ID:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch management member details",
-        });
+        console.error("[ManagementBody] DB getById failed, checking fallback:", error);
       }
+
+      const defaultMember = DEFAULT_MANAGEMENT_MEMBERS[input.id - 1];
+      if (defaultMember) {
+        return {
+          id: input.id,
+          ...defaultMember,
+          points: JSON.parse(defaultMember.points),
+        };
+      }
+
+      return null;
     }),
 
   // Admin: Get all members (active & hidden)
