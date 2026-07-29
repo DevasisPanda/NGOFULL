@@ -8,167 +8,162 @@ import { eq, asc, sql } from "drizzle-orm";
 const DEFAULT_MANAGEMENT_MEMBERS = [
   {
     displayOrder: 1,
-    name: "Solanki Dashrathbhai Narsinhbhai",
-    role: "President & Trustee",
-    image: "https://valmikisamajcharitabletrust.org/assets/CEO1.jpeg",
-    quote: `"True social service requires complete selflessness, unwavering commitment, and a deep dedication to uplifting the most vulnerable sections of our society."`,
-    bio: `Shri Solanki Dashrathbhai Narsinhbhai is a respected social leader, visionary, and key architect of the Valmiki Samaj Charitable Trust. With decades of selfless service, he has dedicated his life to empowering marginalized families, supporting sanitation workers, and promoting education among underprivileged children.
+    name: "Shri Narayanbhai M. Rathod",
+    role: "Founder, Coordinator & President",
+    image: "/assets/CEO1.jpeg",
+    quote: `"Every human life deserves dignity, hope, opportunity, and a future."`,
+    bio: `Driven by this noble philosophy, Shri Narayan M. Rathod has dedicated his life to bringing education, dignity, self-reliance, and hope to the most vulnerable sections of society. He is a visionary social leader whose unwavering commitment to human welfare continues to inspire countless lives.
 
-Under his leadership, the trust has resolved hundreds of community disputes peacefully, organized mass marriage programs, and provided direct financial aid to widows and orphans.`,
+A respected social activist, humanitarian thinker, professional photographer, and Founder President of Valmiki Samaj Charitable Trust, Shri Rathod has earned a distinguished reputation for his tireless efforts in uplifting underprivileged, orphaned, and marginalized communities.`,
     points: JSON.stringify([
       { icon: 'visibility', title: 'Visionary Leadership', description: 'Dedicated to building a society free from poverty and discrimination, focusing on long-term transformation rather than temporary relief.' },
-      { icon: 'handshake', title: 'Commitment to the Vulnerable', description: 'Working tirelessly for orphaned children, widows, sanitation workers, and marginalized families to restore their confidence and dignity.' },
-      { icon: 'gavel', title: 'Social Mediation', description: 'Remarkable contributions toward peaceful resolution of social and family disputes through community mediation.' }
+      { icon: 'handshake', title: 'Commitment to the Vulnerable', description: 'Working tirelessly for orphaned children, widows, sanitation workers, and marginalized families to restore their confidence and dignity.' }
     ]),
-    tag: "President & Founding Trustee",
+    tag: "Registered Trust: F/1968/Aravalli",
     status: "active",
   },
   {
     displayOrder: 2,
-    name: "Chauhan Narendrabhai Bapubhai",
-    role: "Vice President & Trustee",
-    image: "https://valmikisamajcharitabletrust.org/assets/CEO2.jpeg",
-    quote: `"Honesty, public welfare, and moral values are the true pillars of effective public service and social reform."`,
-    bio: `Shri Chauhan Narendrabhai Bapubhai served with distinction as a Talati-cum-Mantri for over 30 years in Isri and Meghraj. Known for his flawless integrity, administrative excellence, and deep devotion to public welfare, he plays a crucial role in directing the organizational growth of the trust.`,
+    name: "Dr. Bhikhabhai K. Solanki",
+    role: "Honorary Secretary",
+    image: "/assets/CEO2.jpeg",
+    quote: `"Together, we can create a world where every individual thrives and contributes to a brighter future."`,
+    bio: `Dr. Bhikhabhai Koderbhai Solanki has been dedicated to social service, humanitarian welfare, and the upliftment of the Valmiki community for over two decades. He has made significant contributions toward the welfare of underprivileged families, widowed women, and orphaned girls.`,
     points: JSON.stringify([
-      { icon: 'badge', title: 'Professional Service', description: 'Served with honesty, transparency, and public welfare focus for over 30 years in local government administration.' },
-      { icon: 'groups', title: 'Community Leadership', description: 'Active leader in Meghraj Taluka, dedicated to social service, moral values, and youth empowerment.' }
+      { icon: 'group', title: 'Community Building', description: 'Fostering strong relationships within the community to build a network of support and empowerment for the marginalized.' },
+      { icon: 'insights', title: 'Strategic Growth', description: 'Guiding the trust\'s expansion and optimizing resources to maximize impact across all ongoing projects.' }
     ]),
-    tag: "Vice President",
+    tag: "Core Management Team",
     status: "active",
   },
   {
     displayOrder: 3,
-    name: "Chimanbhai Ramabhai Solanki",
-    role: "Secretary & Trustee",
-    image: "https://valmikisamajcharitabletrust.org/assets/CEO3.jpeg",
-    quote: `"Education is the ultimate key to breaking generational poverty and restoring human dignity."`,
-    bio: `Shri Chimanbhai Ramabhai Solanki completed his P.T.C. and served as a primary school teacher for 38 years. He has shaped the minds of thousands of exemplary citizens across Shamlaji, Modasa, and Jamnagar.`,
+    name: "Mr. Poonambhai L. Solanki",
+    role: "Chairman",
+    image: "/assets/CEO3.jpeg",
+    quote: `"True justice is the foundation of peace, unity, and harmony in society."`,
+    bio: `Mr. Poonambhai Lalabhai Solanki is a respected community leader, social reformer, and a source of inspiration for society. He has been serving as the Mahant of the Malpur–Aniyor region and has dedicated his life to promoting unity, justice, and social harmony within the community.`,
     points: JSON.stringify([
-      { icon: 'school', title: 'Educational Legacy', description: 'Served 38 years as an educator, instilling academic knowledge and strong ethical values in youth.' },
-      { icon: 'explore', title: 'Community Mobilization', description: 'Actively leads cultural, religious, and social awareness programs to foster community togetherness.' }
+      { icon: 'gavel', title: 'Social Service and Justice', description: 'Remarkable contributions toward the peaceful resolution of social and family disputes through community-based mediation.' }
     ]),
-    tag: "Secretary",
+    tag: "Core Management Team",
     status: "active",
   },
   {
     displayOrder: 4,
-    name: "Govindbhai Kalabhai Rathod",
-    role: "Joint Secretary & Trustee",
-    image: "https://valmikisamajcharitabletrust.org/assets/CEO4.jpeg",
-    quote: `"Humanity is defined not by words, but by the quiet acts of compassion we perform every single day."`,
-    bio: `Shri Govindbhai Kalabhai Rathod is a widely recognized writer, poet, philosopher, and social reformer. His literature and public addresses inspire thousands across rural and urban Gujarat to live with dignity, self-respect, and mutual harmony.`,
+    name: "Mr. Dineshbhai B. Chauhan",
+    role: "Vice Chairman",
+    image: "/assets/CEO4.jpeg",
+    quote: `"Together, we can create a world where every individual thrives and contributes to a brighter future."`,
+    bio: `Mr. Dineshbhai Bhurabhai Chauhan is a religious, service-oriented, and multi-talented personality. As an active leader of the Valmiki community in Meghraj Taluka, he has dedicated his life to social service, moral values, and spiritual growth.`,
     points: JSON.stringify([
-      { icon: 'history_edu', title: 'Creative & Philosophical Leadership', description: 'Renowned poet and philosopher whose writings inspire humanity, resilience, and social justice.' },
-      { icon: 'volunteer_activism', title: 'Grassroots Engagement', description: 'Devoted to treating every individual with equal respect across both rural and urban areas.' }
+      { icon: 'badge', title: 'Professional Service', description: 'Served with honesty, transparency, and a strong sense of public welfare as a Talati-cum-Mantri in Isri and Meghraj for more than 30 years.' }
     ]),
-    tag: "Joint Secretary",
+    tag: "Core Management Team",
     status: "active",
   },
   {
     displayOrder: 5,
-    name: "Jayeshkumar Babubhai Solanki",
-    role: "Treasurer & Trustee",
-    image: "https://valmikisamajcharitabletrust.org/assets/CEO5.jpeg",
-    quote: `"Financial transparency and selfless stewardship ensure every single rupee reaches the rightful beneficiary."`,
-    bio: `Shri Jayeshkumar Babubhai Solanki holds a degree in Rural Development and serves as a Senior Head Clerk. As Treasurer of the trust, he manages all financial audits, donor records, and charitable allocations with complete transparency.`,
+    name: "Mr. Chimanbhai S. Solanki",
+    role: "Vice President",
+    image: "/assets/CEO5.jpeg",
+    quote: `"Every human life deserves dignity, hope, opportunity, and a future."`,
+    bio: `Mr. Chimanbhai Somabhai Solanki is a respected, educated, and socially devoted leader. He completed his P.T.C. and served as a primary school teacher for 38 years, shaping thousands of students into responsible and exemplary citizens.`,
     points: JSON.stringify([
-      { icon: 'payments', title: 'Financial Stewardship', description: 'Manages all trust accounts with complete transparency, accountability, and ethical governance.' },
-      { icon: 'school', title: 'Educational Sponsorships', description: 'Directly supports underprivileged students with school fees, books, and study kits.' }
+      { icon: 'school', title: 'Educational Contribution', description: 'Completed P.T.C. and served as a dedicated primary school teacher for 38 years, instilling academic knowledge and moral values.' }
     ]),
-    tag: "Treasurer",
+    tag: "Core Management Team",
     status: "active",
   },
   {
     displayOrder: 6,
-    name: "Bharatkumar Somabhai Purani",
-    role: "Joint Treasurer & Trustee",
-    image: "https://valmikisamajcharitabletrust.org/assets/CEO6.jpeg",
-    quote: `"Unity and government welfare access transform communities from dependence to empowerment."`,
-    bio: `Shri Bharatkumar Somabhai Purani served as Panch Patel of Ada-Aatham region. He has facilitated government welfare schemes including Kunwarbai Nu Mameru Yojana for mass marriage brides.`,
+    name: "Mr. Govindbhai A. Solanki",
+    role: "Personality and Life Philosophy",
+    image: "/assets/CEO6.jpeg",
+    quote: `"What truly defines us is not where or how we were born, but what we accomplish and contribute throughout our lives."`,
+    bio: `Mr. Govindbhai Alkhabhai Solanki’s life is a remarkable blend of perseverance, courage, creativity, and selfless service to society. Beyond his dedication to social service, Govindbhai is widely recognized as a talented writer, a thoughtful poet, and a profound philosopher.`,
     points: JSON.stringify([
-      { icon: 'groups', title: 'Community Elder', description: 'Respected leader who has resolved community issues with fairness, wisdom, and impartiality.' },
-      { icon: 'handshake', title: 'Welfare Link', description: 'Facilitates government financial assistance for mass marriage brides and needy families.' }
+      { icon: 'history_edu', title: 'Creative Expression', description: 'Widely recognized as a talented writer, thoughtful poet, and profound philosopher whose writings inspire humanity.' }
     ]),
-    tag: "Joint Treasurer",
+    tag: "Core Management Team",
     status: "active",
   },
   {
     displayOrder: 7,
-    name: "Lallubhai Purushottambhai Purani",
-    role: "Trustee",
-    image: "https://valmikisamajcharitabletrust.org/assets/CEO7.jpeg",
-    quote: `"Service to humanity is service to the Divine."`,
-    bio: `Shri Lallubhai Purushottambhai Purani is a dedicated agriculturalist and community leader who brings exceptional donor engagement skills and spiritual principles to the trust.`,
+    name: "Shri Jayeshbhai N. Rathod",
+    role: "Treasurer",
+    image: "/assets/CEO7.jpeg",
+    quote: `"True wealth is not measured by material possessions, but by the ability to bring hope, support, and happiness into the lives of others."`,
+    bio: `Shri Jayeshbhai Nathabhai Rathod is a graduate in Rural Development, currently serving as a Senior Head Clerk at Shri N. U. Bihola High School, Isari. As Treasurer, he carries out his responsibilities with sincerity, transparency, and commitment.`,
     points: JSON.stringify([
-      { icon: 'grass', title: 'Grassroots Agriculture & Service', description: 'Combines agricultural expertise with active community service and donor mobilization.' }
+      { icon: 'school', title: 'Educational Support', description: 'A graduate in Rural Development serving as a Senior Head Clerk, supporting underprivileged students.' }
     ]),
-    tag: "Trustee",
+    tag: "Core Management Team",
     status: "active",
   },
   {
     displayOrder: 8,
-    name: "Vinaykumar Gordhanbhai Rathod",
-    role: "Trustee",
-    image: "https://valmikisamajcharitabletrust.org/assets/CEO8.jpeg",
-    quote: `"Youth leadership and social awareness carry our community forward into the modern era."`,
-    bio: `Shri Vinaykumar Gordhanbhai Rathod completed his B.A. and works professionally with Life Insurance Corporation of India (LIC) in Modasa, driving youth development projects.`,
+    name: "Shri Bharatbhai M. Rathod",
+    role: "Organizational Secretary",
+    image: "/assets/CEO8.jpeg",
+    quote: `"Service to Humanity is Service to God."`,
+    bio: `Shri Bharatbhai M. Rathod is a dedicated and respected social worker actively involved in community service. As the Panch Patel of the Ada-Aatham region, he has played a significant role in resolving social and community issues.`,
     points: JSON.stringify([
-      { icon: 'campaign', title: 'Youth & Public Affairs', description: 'Drives key youth development and community awareness programs across Modasa and Aravalli.' }
+      { icon: 'groups', title: 'Social Leadership', description: 'Served as the Panch Patel of the Ada-Aatham region, resolving community issues with fairness, wisdom, and impartiality.' }
     ]),
-    tag: "Trustee",
+    tag: "Core Management Team",
     status: "active",
   },
   {
     displayOrder: 9,
-    name: "Sanjaykumar Babubhai Solanki",
-    role: "Auditor & Trustee",
-    image: "https://valmikisamajcharitabletrust.org/assets/CEO9.jpeg",
-    quote: `"Accountability and educational excellence form the bedrock of a progressive institution."`,
-    bio: `Shri Sanjaykumar Babubhai Solanki holds M.A. (Economics), M.Ed., and B.Ed. degrees. He serves as Auditor of the trust, ensuring financial accuracy and governance.`,
+    name: "Mr. Lallubhai C. Solanki",
+    role: "Vice Secretary",
+    image: "/assets/CEO9.jpeg",
+    quote: `"True service is the greatest wealth."`,
+    bio: `Mr. Lallubhai Chandubhai Solanki is a simple, service-oriented, and spiritually enriched personality who has dedicated himself to the welfare of society.`,
     points: JSON.stringify([
-      { icon: 'analytics', title: 'Financial Audit & Governance', description: 'Monitors financial audits, budget allocations, and compliance standards for the trust.' }
+      { icon: 'grass', title: 'Social Dedication', description: 'Devoted to social service and community welfare, working actively alongside his agricultural occupation.' }
     ]),
-    tag: "Auditor",
+    tag: "Core Management Team",
     status: "active",
   },
   {
     displayOrder: 10,
-    name: "Nehal Purushottambhai Purani",
-    role: "Trustee",
-    image: "https://valmikisamajcharitabletrust.org/assets/CEO10.jpeg",
-    quote: `"Compassion extends to all living beings—humans and animals alike."`,
-    bio: `Shri Nehal Purushottambhai Purani serves as a Veterinary Officer in Aravalli, combining animal welfare with youth leadership and mass marriage coordination.`,
+    name: "Mr. Vinaykumar G. Rathod",
+    role: "Joint Secretary",
+    image: "/assets/CEO10.jpeg",
+    quote: `"Through continued service and dedication, we carry forward the noble legacy of our predecessors for the betterment of society."`,
+    bio: `Mr. Vinaykumar Gordhanbhai Rathod completed his B.A. degree and serves with LIC Modasa. Following the demise of his father Late Shri Gordhanbhai Rathod, he carries forward this noble legacy.`,
     points: JSON.stringify([
-      { icon: 'pets', title: 'Animal Welfare & Veterinary Care', description: 'Protects and treats voiceless animals while driving scientific thinking in the community.' }
+      { icon: 'history', title: 'Legacy of Service', description: 'Inherited a noble legacy of community leadership from his late father, Shri Gordhanbhai Rathod.' }
     ]),
-    tag: "Trustee",
+    tag: "Core Management Team",
     status: "active",
   },
   {
     displayOrder: 11,
-    name: "Solanki Hasmukhbhai Mohanbhai",
-    role: "Trustee",
-    image: "https://valmikisamajcharitabletrust.org/assets/CEO11.jpeg",
-    quote: `"Collective effort turns small acts of kindness into lasting social revolution."`,
-    bio: `Shri Solanki Hasmukhbhai Mohanbhai is an energetic community organizer dedicated to rural development and mass welfare initiatives.`,
+    name: "Mr. Sanjaykumar J. Solanki",
+    role: "Auditor",
+    image: "/assets/CEO11.jpeg",
+    quote: `"Transparency, accountability, and dedication are the keys to building a trusted and progressive society."`,
+    bio: `Mr. Sanjaykumar Jagdishbhai Solanki is an energetic young social worker holding M.A. (Economics), M.Ed., and B.Ed. degrees. As Auditor, he plays an important role in promoting transparency.`,
     points: JSON.stringify([
-      { icon: 'volunteer_activism', title: 'Social Upliftment', description: 'Coordinates logistics for community gatherings, health camps, and educational drives.' }
+      { icon: 'school', title: 'Academic Credentials', description: 'Highly educated with M.A. (Economics), M.Ed., and B.Ed. degrees, dedicating his expertise to community development.' }
     ]),
-    tag: "Trustee",
+    tag: "Core Management Team",
     status: "active",
   },
   {
     displayOrder: 12,
-    name: "Solanki Pankajkumar Savjibhai",
-    role: "Trustee",
-    image: "https://valmikisamajcharitabletrust.org/assets/CEO12.jpeg",
-    quote: `"Our commitment is to leave no family behind in their journey toward dignity and independence."`,
-    bio: `Shri Solanki Pankajkumar Savjibhai brings strategic focus to beneficiary selection, ensuring social security benefits reach destitute families.`,
+    name: "Dr. Nehal Kumar N. Rathod",
+    role: "Veterinary Officer & Youth Leader",
+    image: "/assets/CEO12.jpeg",
+    quote: `"Cleanliness leads to education, and education leads to development."`,
+    bio: `Dr. Nehal Kumar Rathod is a veterinary doctor by profession and a true humanitarian by heart. Serving as a Veterinary Officer in Aravalli District, he considers animal and human welfare a moral mission.`,
     points: JSON.stringify([
-      { icon: 'handshake', title: 'Beneficiary Welfare', description: 'Oversees beneficiary application verification and emergency financial support for needy families.' }
+      { icon: 'pets', title: 'Animal Welfare', description: 'Veterinary Officer in Aravalli, treating the protection and treatment of voiceless animals as a moral mission.' }
     ]),
-    tag: "Trustee",
+    tag: "Core Management Team",
     status: "active",
   },
 ];
@@ -191,6 +186,19 @@ async function ensureManagementTable(db: any) {
         \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
+
+    // Auto-clean old dummy names if present in database
+    const oldCheck = await db.select().from(managementMembers).where(eq(managementMembers.name, "Solanki Dashrathbhai Narsinhbhai")).limit(1);
+    if (oldCheck.length > 0) {
+      console.log("[ManagementBody] Replacing old dummy leaders with real 12 Trust Leaders...");
+      await db.delete(managementMembers);
+      for (const realLeader of DEFAULT_MANAGEMENT_MEMBERS) {
+        await db.insert(managementMembers).values({
+          ...realLeader,
+          status: realLeader.status as "active" | "hidden",
+        });
+      }
+    }
   } catch (e) {
     console.warn("[ManagementBody] Auto table creation notice:", e);
   }
