@@ -12,18 +12,21 @@ import { Mail, Send, Info } from "lucide-react";
 export default function SendSingleMessagePage() {
   const [formData, setFormData] = useState({
     recipientId: "",
+    phone: "",
     subject: "",
     content: "",
   });
 
   const utils = trpc.useUtils();
   const { data: usersData, isLoading: usersLoading } = trpc.admin.getAllUsers.useQuery({ page: 1, pageSize: 1000 });
+  
   const sendMessageMutation = trpc.message.sendSingle.useMutation({
-    onSuccess: () => {
-      toast.success("Message sent successfully!");
+    onSuccess: (res) => {
+      toast.success(res.message || "Message sent successfully!");
       utils.message.getPreviousNotices.invalidate();
       setFormData({
         recipientId: "",
+        phone: "",
         subject: "",
         content: "",
       });
@@ -33,15 +36,30 @@ export default function SendSingleMessagePage() {
     }
   });
 
+  const handleUserSelect = (val: string) => {
+    const selectedUser = usersData?.items?.find(u => u.id.toString() === val);
+    setFormData(prev => ({
+      ...prev,
+      recipientId: val,
+      phone: selectedUser?.phone || prev.phone,
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.recipientId || !formData.subject || !formData.content) {
-      toast.error("Please fill in all required fields");
+    if (!formData.subject || !formData.content) {
+      toast.error("Please fill in subject and content");
+      return;
+    }
+
+    if (!formData.recipientId && !formData.phone) {
+      toast.error("Please select a user OR enter a WhatsApp phone number");
       return;
     }
 
     sendMessageMutation.mutate({
-      recipientId: parseInt(formData.recipientId),
+      recipientId: formData.recipientId ? parseInt(formData.recipientId) : undefined,
+      phone: formData.phone || undefined,
       subject: formData.subject,
       content: formData.content,
     });
@@ -74,24 +92,36 @@ export default function SendSingleMessagePage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="recipientId">Recipient *</Label>
-              <Select 
-                value={formData.recipientId} 
-                onValueChange={(val) => setFormData({ ...formData, recipientId: val })}
-                disabled={usersLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={usersLoading ? "Loading users..." : "Search and select a user"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {usersData?.items?.map(user => (
-                    <SelectItem key={user.id} value={user.id.toString()}>
-                      {user.name} ({user.email}) - {user.status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="recipientId">Select Recipient User</Label>
+                <Select 
+                  value={formData.recipientId} 
+                  onValueChange={handleUserSelect}
+                  disabled={usersLoading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={usersLoading ? "Loading users..." : "Search registered user"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {usersData?.items?.map(user => (
+                      <SelectItem key={user.id} value={user.id.toString()}>
+                        {user.name} ({user.email || 'No Email'})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">WhatsApp Phone Number *</Label>
+                <Input
+                  id="phone"
+                  placeholder="e.g. 7077906817 or 917077906817"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">

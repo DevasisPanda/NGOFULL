@@ -1,29 +1,45 @@
 import { z } from "zod";
 import { router, adminProcedure } from "../_core/trpc";
 import { getDb } from "../db";
-import { messages, bulkMessageRecipients, users } from "../../drizzle/schema";
+import { messages, bulkMessageRecipients, users, members } from "../../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { sendWhatsAppMessage } from "../services/whatsapp";
 
 export const messageRouter = router({
-  // Send a message to a single user
+  // Send a message to a single user (or direct WhatsApp phone)
   sendSingle: adminProcedure
     .input(
       z.object({
-        recipientId: z.number(),
+        recipientId: z.number().optional(),
+        phone: z.string().optional(),
         subject: z.string().min(1, "Subject is required"),
         content: z.string().min(1, "Content is required"),
       })
     )
     .mutation(async ({ input, ctx }) => {
       const db = await getDb();
-      
-      if (db) {
+      let targetPhone = input.phone?.trim() || null;
+      let targetUserId = input.recipientId || null;
+
+      // If no phone provided directly, lookup recipient's phone from users or members table
+      if (!targetPhone && targetUserId && db) {
+        try {
+          const userRec = await db.select().from(users).where(eq(users.id, targetUserId)).limit(1);
+          if (userRec.length > 0 && userRec[0].phone) {
+            targetPhone = userRec[0].phone;
+          }
+        } catch (e) {
+          console.warn("[Message] Failed to query user phone from DB:", e);
+        }
+      }
+
+      // Record message in database if db is connected
+      if (db && ctx.user?.id) {
         try {
           await db.insert(messages).values({
             senderId: ctx.user.id,
-            recipientId: input.recipientId,
+            recipientId: targetUserId,
             messageType: "individual",
             subject: input.subject,
             content: input.content,
@@ -36,28 +52,27 @@ export const messageRouter = router({
         }
       }
 
-      // Fetch recipient to get their phone number for WhatsApp delivery
-      let recipientPhone: string | null = null;
-      if (db) {
+      // Dispatch WhatsApp message if phone number is available
+      let waStatus: any = null;
+      if (targetPhone) {
         try {
-          const recipient = await db.select().from(users).where(eq(users.id, input.recipientId)).limit(1);
-          if (recipient.length > 0) {
-            recipientPhone = recipient[0].phone || null;
-          }
-        } catch (e) {
-          console.warn("[Message] Failed to query recipient phone from DB:", e);
-        }
-      }
-
-      if (recipientPhone) {
-        try {
-          await sendWhatsAppMessage(recipientPhone, input.subject, input.content);
+          console.log(`[Message Router] Executing WhatsApp dispatch to ${targetPhone}...`);
+          waStatus = await sendWhatsAppMessage(targetPhone, input.subject, input.content);
+          console.log(`[Message Router] WhatsApp dispatch result:`, waStatus);
         } catch (waErr: any) {
           console.error("[WhatsApp API] Direct message dispatch error:", waErr.message);
         }
+      } else {
+        console.warn(`[Message Router] No phone number available for recipient ${targetUserId}. WhatsApp skipped.`);
       }
 
-      return { success: true, message: "Message sent successfully to user." };
+      return { 
+        success: true, 
+        message: targetPhone 
+          ? `Message sent to ${targetPhone} via WhatsApp!` 
+          : "Message saved to dashboard (No phone number associated).",
+        whatsapp: waStatus
+      };
     }),
 
   // Broadcast a message to all active users
