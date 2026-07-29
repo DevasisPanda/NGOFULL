@@ -1,11 +1,13 @@
+import "dotenv/config";
+
 /**
  * WhatsApp Live API Test Script
- * Usage: node scripts/test_whatsapp.js
+ * Usage: node scripts/test_whatsapp.js [phone] [message]
  */
 
 async function testWhatsAppMessage() {
-  const instanceId = process.env.WHATSAPP_INSTANCE_ID || '6A535D73DAE85';
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || '6a427de1437f3';
+  const instanceId = (process.env.WHATSAPP_INSTANCE_ID || '6A535D73DAE85').trim().replace(/^["']|["']$/g, "");
+  const accessToken = (process.env.WHATSAPP_ACCESS_TOKEN || '6a427de1437f3').trim().replace(/^["']|["']$/g, "");
   const number = process.argv[2] || '917077906817';
   const text = process.argv[3] || 'Hi from NGO Management System';
   const subject = 'Live System Test';
