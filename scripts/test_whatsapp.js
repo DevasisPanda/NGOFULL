@@ -6,8 +6,8 @@ import "dotenv/config";
  */
 
 async function testWhatsAppMessage() {
-  const instanceId = (process.env.WHATSAPP_INSTANCE_ID || '6A535D73DAE85').trim().replace(/^["']|["']$/g, "");
-  const accessToken = (process.env.WHATSAPP_ACCESS_TOKEN || '6a427de1437f3').trim().replace(/^["']|["']$/g, "");
+  const instanceId = process.env.WHATSAPP_INSTANCE_ID ? process.env.WHATSAPP_INSTANCE_ID.trim().replace(/^["']|["']$/g, "") : "";
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN ? process.env.WHATSAPP_ACCESS_TOKEN.trim().replace(/^["']|["']$/g, "") : "";
   const number = process.argv[2] || '917077906817';
   const text = process.argv[3] || 'Hi from NGO Management System';
   const subject = 'Live System Test';
@@ -22,6 +22,11 @@ async function testWhatsAppMessage() {
   console.log('Access Token     :', accessToken);
   console.log('Message Payload  :\n', formattedMessage);
   console.log('----------------------------------------------------');
+
+  if (!instanceId || !accessToken) {
+    console.error('\n❌ CRITICAL ERROR: WHATSAPP_INSTANCE_ID or WHATSAPP_ACCESS_TOKEN is missing in process.env / .env file!');
+    return;
+  }
 
   const url = `https://button.allexpert.in/api/send?number=${number}&type=text&message=${encodeURIComponent(formattedMessage)}&instance_id=${instanceId}&access_token=${accessToken}`;
 
