@@ -5,17 +5,8 @@ import axios from 'axios';
  */
 
 function getWhatsAppCredentials() {
-  const envToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim().replace(/^["']|["']$/g, "");
-  const envInstance = process.env.WHATSAPP_INSTANCE_ID?.trim().replace(/^["']|["']$/g, "");
-
-  const accessToken = (envToken && envToken.length > 5 && !envToken.includes('XXXX')) 
-    ? envToken 
-    : '6a427de1437f3';
-
-  const instanceId = (envInstance && envInstance.length > 5 && !envInstance.includes('XXXX')) 
-    ? envInstance 
-    : '6A535D73DAE85';
-
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim().replace(/^["']|["']$/g, "") || "";
+  const instanceId = process.env.WHATSAPP_INSTANCE_ID?.trim().replace(/^["']|["']$/g, "") || "";
   return { accessToken, instanceId };
 }
 
@@ -71,8 +62,7 @@ export const sendWhatsAppMessage = async (phone: string, subject: string, text: 
  * Send WhatsApp Media / File Attachment (PDF Receipts, Certificates, Images)
  */
 export const sendWhatsAppMedia = async (phone: string, caption: string, mediaUrl: string, filename?: string) => {
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || '6a427de1437f3';
-  const instanceId = process.env.WHATSAPP_INSTANCE_ID || '6A535D73DAE85';
+  const { accessToken, instanceId } = getWhatsAppCredentials();
 
   let cleanNumber = phone.replace(/\D/g, '');
   if (cleanNumber.length === 10) {
