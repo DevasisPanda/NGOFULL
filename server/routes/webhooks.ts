@@ -5,6 +5,7 @@ import { donations, paymentTransactions, members } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { generateMembershipNumber } from "../_core/shared";
+import { deliverReceiptViaWhatsApp, deliverReceiptViaEmail } from "../services/receipt";
 
 export const razorpayWebhookRouter = Router();
 
@@ -130,6 +131,26 @@ razorpayWebhookRouter.post("/", async (req: WebhookRequest, res: Response): Prom
               updatedAt: new Date(),
             });
             console.log(`[Webhook] Standard donation payment recorded via webhook: Payment ID ${paymentId}, Receipt ${receiptNumber}`);
+
+            // Fire-and-forget delivery
+            const apiBaseUrl = process.env.API_BASE_URL || "https://api.valmikisamajcharitabletrust.org";
+            const pdfUrl = `${apiBaseUrl}/api/receipts/download/${receiptNumber}.pdf`;
+            const receiptData = {
+              donationId: 0,
+              receiptNumber,
+              donorName: notes.donorName || paymentEntity?.notes?.donorName || "Anonymous Donor",
+              donorEmail: notes.donorEmail || paymentEntity?.email || "",
+              donorPhone: notes.donorPhone || paymentEntity?.contact || "",
+              amount: String(amountInRupees),
+              purpose: notes.purpose || "General Donation",
+              paymentMethod: "razorpay",
+              transactionId: paymentId,
+              createdAt: new Date(),
+            };
+            setImmediate(() => {
+              deliverReceiptViaWhatsApp(receiptData, pdfUrl).catch((e) => console.error("[Webhook] WhatsApp delivery failed:", e));
+              deliverReceiptViaEmail(receiptData, pdfUrl).catch((e) => console.error("[Webhook] Email delivery failed:", e));
+            });
           }
         }
       }
@@ -200,6 +221,26 @@ razorpayWebhookRouter.post("/", async (req: WebhookRequest, res: Response): Prom
               updatedAt: new Date(),
             });
             console.log(`[Webhook] Recorded subscription charge via webhook: Payment ID ${paymentId}, Receipt ${receiptNumber}`);
+
+            // Fire-and-forget delivery
+            const apiBaseUrl = process.env.API_BASE_URL || "https://api.valmikisamajcharitabletrust.org";
+            const pdfUrl = `${apiBaseUrl}/api/receipts/download/${receiptNumber}.pdf`;
+            const receiptData = {
+              donationId: 0,
+              receiptNumber,
+              donorName: notes.donorName || paymentEntity?.notes?.donorName || "Anonymous Donor",
+              donorEmail: paymentEntity?.email || "",
+              donorPhone: paymentEntity?.contact || "",
+              amount: String(amountInRupees),
+              purpose: notes.purpose || "Monthly Donation Renewal",
+              paymentMethod: "razorpay_subscription",
+              transactionId: paymentId,
+              createdAt: new Date(),
+            };
+            setImmediate(() => {
+              deliverReceiptViaWhatsApp(receiptData, pdfUrl).catch((e) => console.error("[Webhook] WhatsApp delivery failed:", e));
+              deliverReceiptViaEmail(receiptData, pdfUrl).catch((e) => console.error("[Webhook] Email delivery failed:", e));
+            });
           }
         }
       }

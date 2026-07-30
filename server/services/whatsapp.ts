@@ -71,7 +71,7 @@ export const sendWhatsAppMedia = async (phone: string, caption: string, mediaUrl
 
   try {
     console.log(`[WhatsApp API] Dispatching media message to ${cleanNumber}...`);
-    const params: any = {
+    const payload: any = {
       number: cleanNumber,
       type: "media",
       message: caption,
@@ -81,10 +81,12 @@ export const sendWhatsAppMedia = async (phone: string, caption: string, mediaUrl
     };
 
     if (filename) {
-      params.filename = filename;
+      payload.filename = filename;
     }
 
-    const response = await axios.post('https://button.allexpert.in/api/send', null, { params });
+    const response = await axios.post('https://button.allexpert.in/api/send', payload, {
+      headers: { 'Content-Type': 'application/json' }
+    });
     console.log(`[WhatsApp Media API] Response:`, response.data);
 
     return { success: true, data: response.data };

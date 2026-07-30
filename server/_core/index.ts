@@ -17,6 +17,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { razorpayWebhookRouter } from "../routes/webhooks";
+import { receiptRouter } from "../routes/receipts";
 
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
@@ -116,6 +117,9 @@ async function startServer() {
   
   // Webhooks Router
   app.use("/api/webhooks/razorpay", razorpayWebhookRouter);
+  
+  // Receipt Download Router
+  app.use("/api/receipts", receiptRouter);
   
   // Rate Limiting has been disabled to ensure smooth logins and prevent proxy IP mismatch blocks
   

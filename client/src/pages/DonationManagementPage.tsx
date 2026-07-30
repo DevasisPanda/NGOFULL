@@ -9,7 +9,7 @@ import { useRazorpayPayment } from "@/hooks/useRazorpayPayment";
 import { CaptureActions } from "@/components/CaptureActions";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { FileText, QrCode, Trash2, Edit, Download, Image as ImageIcon, Calendar, Search, Check, Loader2, XCircle, PlusCircle, Info } from "lucide-react";
+import { FileText, QrCode, Trash2, Edit, Download, Image as ImageIcon, Calendar, Search, Check, Loader2, XCircle, PlusCircle, Info, Send, Mail } from "lucide-react";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { VerifiableDocument } from "@/components/VerifiableDocument";
 import { Label } from "@/components/ui/label";
@@ -126,6 +126,17 @@ export default function DonationManagementPage() {
     },
     onError: (err) => {
       toast.error(err.message || "Failed to delete donation");
+    },
+  });
+
+  const resendReceiptMutation = trpc.donation.resendReceiptNotification.useMutation({
+    onSuccess: (data: any) => {
+      const wStatus = data.results?.whatsapp?.success ? "✓ WhatsApp sent" : "WhatsApp skipped";
+      const eStatus = data.results?.email?.success ? "✓ Email sent" : "Email skipped";
+      toast.success(`Receipt resent! ${wStatus}, ${eStatus}`);
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to resend receipt");
     },
   });
 
@@ -832,7 +843,45 @@ export default function DonationManagementPage() {
                           </div>
                         </td>
                         <td className="p-4 text-center pr-6 whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1.5">
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                            {donation.paymentStatus === "completed" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedReceiptDonation(donation);
+                                  setIsReceiptModalOpen(true);
+                                }}
+                                className="text-teal-600 hover:bg-teal-50 hover:text-teal-700 h-8 w-8 p-0"
+                                title="View Receipt"
+                              >
+                                <FileText className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {donation.paymentStatus === "completed" && (donation.donorPhone || donation.donorEmail) && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => resendReceiptMutation.mutate({ donationId: donation.id, channel: "whatsapp" })}
+                                  className="text-green-600 hover:bg-green-50 hover:text-green-700 h-8 w-8 p-0"
+                                  disabled={resendReceiptMutation.isPending}
+                                  title="Resend WhatsApp"
+                                >
+                                  <Send className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => resendReceiptMutation.mutate({ donationId: donation.id, channel: "email" })}
+                                  className="text-blue-600 hover:bg-blue-50 hover:text-blue-700 h-8 w-8 p-0"
+                                  disabled={resendReceiptMutation.isPending}
+                                  title="Resend Email"
+                                >
+                                  <Mail className="w-3.5 h-3.5" />
+                                </Button>
+                              </>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"
@@ -920,6 +969,32 @@ export default function DonationManagementPage() {
 
           <DialogFooter className="pt-2 border-t flex gap-2 w-full">
             <CaptureActions cardRef={receiptRef} filename={`Donation_Receipt_${selectedReceiptDonation?.receiptNumber || "receipt"}`} />
+            {selectedReceiptDonation?.paymentStatus === "completed" && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-green-600 border-green-200 hover:bg-green-50"
+                  onClick={() => {
+                    resendReceiptMutation.mutate({ donationId: selectedReceiptDonation.id, channel: "whatsapp" });
+                  }}
+                  disabled={resendReceiptMutation.isPending}
+                >
+                  <Send className="w-3.5 h-3.5 mr-1" /> WhatsApp
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  onClick={() => {
+                    resendReceiptMutation.mutate({ donationId: selectedReceiptDonation.id, channel: "email" });
+                  }}
+                  disabled={resendReceiptMutation.isPending}
+                >
+                  <Mail className="w-3.5 h-3.5 mr-1" /> Email
+                </Button>
+              </>
+            )}
             <Button variant="outline" className="text-gray-700 bg-white" onClick={() => setIsReceiptModalOpen(false)}>
               Close
             </Button>

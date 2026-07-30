@@ -6,6 +6,7 @@ import { eq, desc, sql, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { paginationInput } from "../_core/shared";
+import { deliverReceiptViaWhatsApp, deliverReceiptViaEmail } from "../services/receipt";
 
 export const donationRouter = router({
   // Create donation
@@ -347,5 +348,55 @@ export const donationRouter = router({
         paymentMethod,
         transactionId,
       };
+    }),
+
+  // Resend receipt notification (admin only)
+  resendReceiptNotification: adminProcedure
+    .input(
+      z.object({
+        donationId: z.number(),
+        channel: z.enum(["whatsapp", "email", "both"]).default("both"),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const [donation] = await db
+        .select()
+        .from(donations)
+        .where(eq(donations.id, input.donationId))
+        .limit(1);
+
+      if (!donation) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Donation record not found" });
+      }
+
+      const apiBaseUrl = process.env.API_BASE_URL || "https://api.valmikisamajcharitabletrust.org";
+      const pdfUrl = `${apiBaseUrl}/api/receipts/download/${donation.receiptNumber}.pdf`;
+
+      const receiptData = {
+        donationId: donation.id,
+        receiptNumber: donation.receiptNumber || "",
+        donorName: donation.donorName || "Anonymous Donor",
+        donorEmail: donation.donorEmail || "",
+        donorPhone: donation.donorPhone || "",
+        amount: donation.amount.toString(),
+        purpose: donation.purpose || "General Donation",
+        paymentMethod: donation.paymentMethod || donation.donationType || "ONLINE",
+        transactionId: donation.transactionId || donation.receiptNumber || "",
+        createdAt: donation.createdAt,
+      };
+
+      const results: { whatsapp?: any; email?: any } = {};
+
+      if (input.channel === "whatsapp" || input.channel === "both") {
+        results.whatsapp = await deliverReceiptViaWhatsApp(receiptData, pdfUrl);
+      }
+      if (input.channel === "email" || input.channel === "both") {
+        results.email = await deliverReceiptViaEmail(receiptData, pdfUrl);
+      }
+
+      return { success: true, results };
     }),
 });

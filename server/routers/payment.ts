@@ -7,6 +7,7 @@ import { eq, desc, sql, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { paginationInput } from "../_core/shared";
+import { deliverReceiptViaWhatsApp, deliverReceiptViaEmail } from "../services/receipt";
 
 const normalizeNumerals = (val: unknown): unknown => {
   if (typeof val !== "string") return val;
@@ -261,6 +262,26 @@ export const paymentRouter = router({
             .where(eq(campaigns.id, txn.campaignId));
         }
       }
+
+      // Fire-and-forget: deliver receipt via WhatsApp & Email
+      const apiBaseUrl = process.env.API_BASE_URL || "https://api.valmikisamajcharitabletrust.org";
+      const pdfUrl = `${apiBaseUrl}/api/receipts/download/${receiptNumber}.pdf`;
+      const receiptData = {
+        donationId,
+        receiptNumber,
+        donorName: txn.donorName || "Anonymous Donor",
+        donorEmail: txn.donorEmail || "",
+        donorPhone: txn.donorPhone || "",
+        amount: txn.amount,
+        purpose: txn.purpose || "General Donation",
+        paymentMethod: "razorpay",
+        transactionId: input.razorpayPaymentId,
+        createdAt: new Date(),
+      };
+      setImmediate(() => {
+        deliverReceiptViaWhatsApp(receiptData, pdfUrl).catch((e) => console.error("[Payment] WhatsApp delivery failed:", e));
+        deliverReceiptViaEmail(receiptData, pdfUrl).catch((e) => console.error("[Payment] Email delivery failed:", e));
+      });
 
       return {
         success: true,
