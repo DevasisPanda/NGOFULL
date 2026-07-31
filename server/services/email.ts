@@ -99,14 +99,14 @@ export const sendDonationReceiptEmail = async (
 
   <p style="font-size: 16px; line-height: 24px;">Dear <strong>${data.donorName || "Donor"}</strong>,</p>
   <p style="font-size: 16px; line-height: 24px; margin-bottom: 16px;">
-    Thank you for your generous contribution of <strong>₹${parseFloat(data.amount).toFixed(2)}</strong> to Valmiki Samaj Charitable Trust. Your support helps us continue our mission.
+    Thank you for your generous contribution of <strong>Rs. ${parseFloat(data.amount).toFixed(2)}</strong> to Valmiki Samaj Charitable Trust. Your support helps us continue our mission.
   </p>
 
   <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
     <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
       <tr><td style="padding: 6px 0; color: #64748b;"><b>Receipt No:</b></td><td style="padding: 6px 0; color: #1e293b;">${data.receiptNumber}</td></tr>
       <tr><td style="padding: 6px 0; color: #64748b;"><b>Payment ID:</b></td><td style="padding: 6px 0; color: #1e293b;">${data.transactionId || "N/A"}</td></tr>
-      <tr><td style="padding: 6px 0; color: #64748b;"><b>Amount:</b></td><td style="padding: 6px 0; color: #115e59; font-weight: bold;">₹${parseFloat(data.amount).toFixed(2)}</td></tr>
+      <tr><td style="padding: 6px 0; color: #64748b;"><b>Amount:</b></td><td style="padding: 6px 0; color: #115e59; font-weight: bold;">Rs. ${parseFloat(data.amount).toFixed(2)}</td></tr>
       <tr><td style="padding: 6px 0; color: #64748b;"><b>Purpose:</b></td><td style="padding: 6px 0; color: #1e293b;">${data.purpose || "General Donation"}</td></tr>
       <tr><td style="padding: 6px 0; color: #64748b;"><b>Date:</b></td><td style="padding: 6px 0; color: #1e293b;">${date}</td></tr>
       <tr><td style="padding: 6px 0; color: #64748b;"><b>80G URN:</b></td><td style="padding: 6px 0; color: #1e293b;">AADTV2345L25AD01</td></tr>
@@ -127,7 +127,7 @@ export const sendDonationReceiptEmail = async (
     console.log("               [MOCK EMAIL SERVICE]                     ");
     console.log("========================================================");
     console.log(`Sending donation receipt to: ${data.donorEmail}`);
-    console.log(`Receipt: ${data.receiptNumber} | Amount: ₹${data.amount}`);
+    console.log(`Receipt: ${data.receiptNumber} | Amount: Rs. ${data.amount}`);
     console.log(`Attachments: [${pdfUrl}]`);
     console.log("========================================================\n");
     return { success: true, mock: true };

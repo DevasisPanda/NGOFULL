@@ -56,7 +56,13 @@ async function loadTemplateConfig(): Promise<{
               ? JSON.parse(dbTemplate.designJson)
               : dbTemplate.designJson;
             if (Array.isArray(parsed) && parsed.length > 0) {
-              fields = parsed;
+              // Dedupe by field id — keep the last occurrence so the
+              // admin's latest edit wins if the builder saved duplicates.
+              const byId = new Map<string, FieldSpec>();
+              for (const f of parsed) {
+                if (f && typeof f.id === "string" && f.id) byId.set(f.id, f);
+              }
+              fields = Array.from(byId.values());
             }
           } catch (e) {
             console.warn("[Receipt] Failed to parse designJson, using defaults:", e);
@@ -107,7 +113,10 @@ export async function generateReceiptPDF(fieldValues: Record<string, string>): P
     pdf.setFontSize(fontSize);
     pdf.setTextColor(field.color || "#1e293b");
     pdf.setFont("helvetica", field.weight === "bold" ? "bold" : "normal");
-    pdf.text(val, xMm, yMm, { align: field.align || "left", baseline: "top" });
+    // Match CertificateBuilder/VerifiableDocument canvas rendering:
+    // they use ctx.textBaseline = 'middle', so (x,y) is the vertical
+    // center of the text line — use baseline 'middle' to line up exactly.
+    pdf.text(val, xMm, yMm, { align: field.align || "left", baseline: "middle" });
   }
 
   return Buffer.from(pdf.output("arraybuffer"));
@@ -135,7 +144,7 @@ export function buildReceiptFieldValues(data: DonationReceiptData): Record<strin
     receiptNumber: data.receiptNumber || "N/A",
     date,
     donorName: data.donorName || "Anonymous Donor",
-    amount: `₹${parseFloat(data.amount).toFixed(2)}`,
+    amount: `Rs. ${parseFloat(data.amount).toFixed(2)}`,
     purpose: data.purpose || "General Donation",
     paymentMethod: (data.paymentMethod || "ONLINE").toUpperCase(),
     transactionId: data.transactionId || data.receiptNumber,
@@ -155,10 +164,10 @@ export async function deliverReceiptViaWhatsApp(
     `*Valmiki Samaj Charitable Trust*\n` +
     `*OFFICIAL DONATION RECEIPT*\n\n` +
     `Dear *${data.donorName || "Donor"}*,\n` +
-    `Thank you for your generous contribution of *₹${parseFloat(data.amount).toFixed(2)}* to Valmiki Samaj Charitable Trust!\n\n` +
+    `Thank you for your generous contribution of *Rs. ${parseFloat(data.amount).toFixed(2)}* to Valmiki Samaj Charitable Trust!\n\n` +
     `📄 *Receipt No*: ${data.receiptNumber}\n` +
     `💳 *Payment ID*: ${data.transactionId || "N/A"}\n` +
-    `💰 *Amount*: ₹${parseFloat(data.amount).toFixed(2)}\n` +
+    `💰 *Amount*: Rs. ${parseFloat(data.amount).toFixed(2)}\n` +
     `📌 *Purpose*: ${data.purpose || "General Donation"}\n` +
     `📅 *Date*: ${new Date(data.createdAt).toLocaleDateString("en-GB")}\n` +
     `🏛 *80G Tax Exemption URN*: AADTV2345L25AD01\n\n` +
