@@ -1,15 +1,20 @@
 import { jsPDF } from "jspdf";
 import axios from "axios";
+import { getDb } from "../db";
+import { certificateTemplates } from "../../drizzle/schema";
+import { eq } from "drizzle-orm";
 import { sendWhatsAppMedia } from "./whatsapp";
 import { sendDonationReceiptEmail } from "./email";
 
-const TEMPLATE_URL =
+const DEFAULT_TEMPLATE_URL =
   "https://res.cloudinary.com/dxmovdiru/image/upload/v1781611665/ngo-management/templates/donation_receipt_template.jpg";
-const IMG_W = 905;
-const IMG_H = 1280;
+const DEFAULT_IMG_W = 905;
+const DEFAULT_IMG_H = 1280;
 
 interface FieldSpec {
   id: string;
+  label: string;
+  text: string;
   x: number;
   y: number;
   size: number;
@@ -18,39 +23,91 @@ interface FieldSpec {
   align: "left" | "center" | "right";
 }
 
-const FIELDS: FieldSpec[] = [
-  { id: "receiptNumber", x: 208, y: 224, size: 18, color: "#1e293b", weight: "bold", align: "left" },
-  { id: "date", x: 706, y: 224, size: 18, color: "#1e293b", weight: "bold", align: "right" },
-  { id: "donorName", x: 217, y: 384, size: 22, color: "#1e293b", weight: "bold", align: "left" },
-  { id: "amount", x: 217, y: 563, size: 24, color: "#115e59", weight: "bold", align: "left" },
-  { id: "purpose", x: 217, y: 723, size: 20, color: "#1e293b", weight: "bold", align: "left" },
-  { id: "paymentMethod", x: 217, y: 795, size: 18, color: "#1e293b", weight: "bold", align: "left" },
-  { id: "transactionId", x: 217, y: 865, size: 18, color: "#1e293b", weight: "bold", align: "left" },
+const DEFAULT_FIELDS: FieldSpec[] = [
+  { id: "receiptNumber", label: "Receipt No.", text: "", x: 208, y: 224, size: 18, color: "#1e293b", weight: "bold", align: "left" },
+  { id: "date", label: "Date", text: "", x: 706, y: 224, size: 18, color: "#1e293b", weight: "bold", align: "right" },
+  { id: "donorName", label: "Donor Name", text: "", x: 217, y: 384, size: 22, color: "#1e293b", weight: "bold", align: "left" },
+  { id: "amount", label: "Amount", text: "", x: 217, y: 563, size: 24, color: "#115e59", weight: "bold", align: "left" },
+  { id: "purpose", label: "Purpose", text: "", x: 217, y: 723, size: 20, color: "#1e293b", weight: "bold", align: "left" },
+  { id: "paymentMethod", label: "Payment Method", text: "", x: 217, y: 795, size: 18, color: "#1e293b", weight: "bold", align: "left" },
+  { id: "transactionId", label: "Transaction ID", text: "", x: 217, y: 865, size: 18, color: "#1e293b", weight: "bold", align: "left" },
 ];
 
+async function loadTemplateConfig(): Promise<{
+  templateUrl: string;
+  imgW: number;
+  imgH: number;
+  fields: FieldSpec[];
+}> {
+  try {
+    const db = await getDb();
+    if (db) {
+      const [dbTemplate] = await db
+        .select()
+        .from(certificateTemplates)
+        .where(eq(certificateTemplates.type, "donation"))
+        .limit(1);
+
+      if (dbTemplate) {
+        let fields: FieldSpec[] = DEFAULT_FIELDS;
+        if (dbTemplate.designJson) {
+          try {
+            const parsed = typeof dbTemplate.designJson === "string"
+              ? JSON.parse(dbTemplate.designJson)
+              : dbTemplate.designJson;
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              fields = parsed;
+            }
+          } catch (e) {
+            console.warn("[Receipt] Failed to parse designJson, using defaults:", e);
+          }
+        }
+
+        return {
+          templateUrl: dbTemplate.templateImage || DEFAULT_TEMPLATE_URL,
+          imgW: DEFAULT_IMG_W,
+          imgH: DEFAULT_IMG_H,
+          fields,
+        };
+      }
+    }
+  } catch (e) {
+    console.warn("[Receipt] Failed to load template from DB, using defaults:", e);
+  }
+
+  return {
+    templateUrl: DEFAULT_TEMPLATE_URL,
+    imgW: DEFAULT_IMG_W,
+    imgH: DEFAULT_IMG_H,
+    fields: DEFAULT_FIELDS,
+  };
+}
+
 export async function generateReceiptPDF(fieldValues: Record<string, string>): Promise<Buffer> {
-  const imgResp = await axios.get(TEMPLATE_URL, { responseType: "arraybuffer" });
+  const config = await loadTemplateConfig();
+
+  const imgResp = await axios.get(config.templateUrl, { responseType: "arraybuffer" });
   const imgBase64 = Buffer.from(imgResp.data).toString("base64");
 
   const PAGE_W = 210;
-  const scale = PAGE_W / IMG_W;
-  const PAGE_H = IMG_H * scale;
+  const scale = PAGE_W / config.imgW;
+  const PAGE_H = config.imgH * scale;
 
   const pdf = new jsPDF("p", "mm", [PAGE_W, PAGE_H]);
   pdf.addImage(`data:image/jpeg;base64,${imgBase64}`, "JPEG", 0, 0, PAGE_W, PAGE_H);
 
-  for (const f of FIELDS) {
-    const val = fieldValues[f.id];
+  for (const field of config.fields) {
+    const val = fieldValues[field.id];
     if (!val) continue;
 
-    const xMm = f.x * scale;
-    const yMm = f.y * scale;
-    const fontSize = Math.round((f.size * scale) / 0.3528);
+    const xMm = field.x * scale;
+    const yMm = field.y * scale;
+    const fontSize = Math.round((field.size * scale) / 0.3528);
 
     pdf.setFontSize(fontSize);
-    pdf.setTextColor(f.color);
-    pdf.setFont("helvetica", f.weight === "bold" ? "bold" : "normal");
-    pdf.text(val, xMm, yMm, { align: f.align, baseline: "top" });
+    pdf.setTextColor(field.color || "#1e293b");
+    pdf.setFont("helvetica", field.weight === "bold" ? "bold" : "normal");
+    pdf.text(val, xMm, yMm, { align: field.align || "left", baseline: "top" });
   }
 
   return Buffer.from(pdf.output("arraybuffer"));

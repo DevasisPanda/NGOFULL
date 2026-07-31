@@ -14,6 +14,7 @@ import MembershipManagementPage from "./pages/MembershipManagementPage";
 import DonationManagementPage from "./pages/DonationManagementPage";
 import ActiveCampaignsPage from "./pages/admin/crowdfunding/ActiveCampaignsPage";
 import { trpc } from "@/lib/trpc";
+import FloatingWhatsAppBadge from "./components/FloatingWhatsAppBadge";
 
 function SSOReceiver() {
   const [, setLocation] = useLocation();
@@ -198,6 +199,7 @@ function App() {
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
+          <FloatingWhatsAppBadge />
           <Router />
         </TooltipProvider>
       </ThemeProvider>
