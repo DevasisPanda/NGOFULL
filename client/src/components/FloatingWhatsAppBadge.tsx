@@ -8,7 +8,7 @@ export const FloatingWhatsAppBadge: React.FC = () => {
       href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-4 left-4 z-[9999] block transition-transform duration-300 hover:scale-105 active:scale-95 shadow-2xl rounded-2xl overflow-hidden group"
+      className="fixed bottom-4 right-4 z-[9999] block transition-transform duration-300 hover:scale-105 active:scale-95 shadow-2xl rounded-2xl overflow-hidden group"
       title="Contact Us on WhatsApp - 9024548020"
     >
       <img
