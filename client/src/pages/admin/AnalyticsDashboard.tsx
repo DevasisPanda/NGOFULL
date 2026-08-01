@@ -180,10 +180,12 @@ export default function AnalyticsDashboard() {
   });
 
   const isLoading = overview.isLoading;
+  const apiError = overview.data?.error;
   const hasError =
     overview.error ||
     dailyVisitors.error ||
-    topPages.error;
+    topPages.error ||
+    !!apiError;
 
   const refetchAll = () => {
     overview.refetch();
@@ -253,6 +255,7 @@ export default function AnalyticsDashboard() {
       {hasError && (
         <ErrorBox
           message={
+            apiError ||
             overview.error?.message ||
             "Failed to load analytics data. Ensure GA4 credentials are configured in .env"
           }
