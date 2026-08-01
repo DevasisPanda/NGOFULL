@@ -14,17 +14,29 @@ import { router, adminProcedure } from "../_core/trpc";
 let analyticsClient: any = null;
 
 async function getAnalyticsClient() {
-  if (analyticsClient) return analyticsClient;
+  if (analyticsClient) return { client: analyticsClient, error: null };
 
   const clientEmail = process.env.GA4_CLIENT_EMAIL?.trim().replace(/^["']|["']$/g, "");
   let privateKey = process.env.GA4_PRIVATE_KEY?.trim().replace(/^["']|["']$/g, "");
 
-  if (!clientEmail || !privateKey) {
-    return null;
+  if (!clientEmail) {
+    return { client: null, error: "GA4_CLIENT_EMAIL environment variable is missing." };
+  }
+  if (!privateKey) {
+    return { client: null, error: "GA4_PRIVATE_KEY environment variable is missing." };
   }
 
-  // Handle escaped newlines from environment variable strings
-  privateKey = privateKey.replace(/\\n/g, "\n");
+  // Robustly convert escaped newlines (e.g. \n or \\n) to real newlines
+  privateKey = privateKey
+    .replace(/\\n/g, "\n")
+    .replace(/\\\\n/g, "\n");
+
+  // Ensure header and footer have proper newlines if squashed onto a single line
+  if (!privateKey.includes("\n") && privateKey.includes("-----BEGIN PRIVATE KEY-----")) {
+    privateKey = privateKey
+      .replace("-----BEGIN PRIVATE KEY-----", "-----BEGIN PRIVATE KEY-----\n")
+      .replace("-----END PRIVATE KEY-----", "\n-----END PRIVATE KEY-----");
+  }
 
   try {
     const { BetaAnalyticsDataClient } = await import("@google-analytics/data");
@@ -36,10 +48,10 @@ async function getAnalyticsClient() {
       },
     });
 
-    return analyticsClient;
-  } catch (err) {
+    return { client: analyticsClient, error: null };
+  } catch (err: any) {
     console.error("[GA4 Data API] Failed to initialize Google Analytics client:", err);
-    return null;
+    return { client: null, error: `Google Auth Error: ${err?.message || err}` };
   }
 }
 
@@ -65,7 +77,7 @@ export const analyticsRouter = router({
     .input(dateRangeInput)
     .query(async ({ input }) => {
       try {
-        const client = await getAnalyticsClient();
+        const { client, error: clientError } = await getAnalyticsClient();
         const property = getPropertyId();
 
         if (!client || !property) {
@@ -77,6 +89,7 @@ export const analyticsRouter = router({
             avgSessionDuration: 0,
             bounceRate: 0,
             configured: false,
+            error: clientError || (!property ? "GA4_PROPERTY_ID environment variable is missing." : "GA4 Client Error"),
           };
         }
 
@@ -131,7 +144,7 @@ export const analyticsRouter = router({
     )
     .query(async ({ input }) => {
       try {
-        const client = await getAnalyticsClient();
+        const { client } = await getAnalyticsClient();
         const property = getPropertyId();
 
         if (!client || !property) return [];
@@ -171,7 +184,7 @@ export const analyticsRouter = router({
     .input(dateRangeInput)
     .query(async ({ input }) => {
       try {
-        const client = await getAnalyticsClient();
+        const { client } = await getAnalyticsClient();
         const property = getPropertyId();
 
         if (!client || !property) return [];
@@ -216,7 +229,7 @@ export const analyticsRouter = router({
     .input(dateRangeInput)
     .query(async ({ input }) => {
       try {
-        const client = await getAnalyticsClient();
+        const { client } = await getAnalyticsClient();
         const property = getPropertyId();
 
         if (!client || !property) return [];
@@ -254,7 +267,7 @@ export const analyticsRouter = router({
     .input(dateRangeInput)
     .query(async ({ input }) => {
       try {
-        const client = await getAnalyticsClient();
+        const { client } = await getAnalyticsClient();
         const property = getPropertyId();
 
         if (!client || !property) return [];
@@ -284,7 +297,7 @@ export const analyticsRouter = router({
     .input(dateRangeInput)
     .query(async ({ input }) => {
       try {
-        const client = await getAnalyticsClient();
+        const { client } = await getAnalyticsClient();
         const property = getPropertyId();
 
         if (!client || !property) return [];
@@ -319,7 +332,7 @@ export const analyticsRouter = router({
     .input(dateRangeInput)
     .query(async ({ input }) => {
       try {
-        const client = await getAnalyticsClient();
+        const { client } = await getAnalyticsClient();
         const property = getPropertyId();
 
         if (!client || !property) return [];
@@ -350,7 +363,7 @@ export const analyticsRouter = router({
    */
   getRealtime: adminProcedure.query(async () => {
     try {
-      const client = await getAnalyticsClient();
+      const { client } = await getAnalyticsClient();
       const property = getPropertyId();
 
       if (!client || !property) return { totalActive: 0, pages: [] };
