@@ -1,0 +1,17 @@
+{
+  "name": "Genius AI",
+  "short_name": "Genius",
+  "description": "AI-powered generation platform for conversation, images, music, video, and code",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}

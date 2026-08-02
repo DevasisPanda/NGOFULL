@@ -1,0 +1,16 @@
+# Genius AI Security Policy
+
+## Supported Browsers
+We support the latest versions of Chrome, Firefox, Safari, and Edge.
+
+## Reporting Security Issues
+If you discover a security vulnerability, please report it responsibly.
+Do not open a public GitHub issue for security vulnerabilities.
+
+## Data Handling
+- We do not store AI-generated content permanently
+- API keys are never exposed to the client
+- User data is handled in accordance with our privacy practices
+
+## Contact
+For security inquiries, please contact the project maintainers.

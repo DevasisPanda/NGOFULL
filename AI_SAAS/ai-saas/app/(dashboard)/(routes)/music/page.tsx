@@ -6,22 +6,29 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
-import { useRouter } from "next/navigation";
-import { Music, Send } from "lucide-react";
+import { Music, Send, Copy } from "lucide-react";
 
 import { Heading } from "@/components/heading";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
-import { Loader } from "@/components/loader";
+import { SkeletonMessage } from "@/components/skeleton";
 import { Empty } from "@/components/ui/empty";
 import { useProModal } from "@/hooks/use-pro-modal";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 
 import { formSchema } from "./constants";
 
+const MUSIC_TEMPLATES = [
+  "Piano solo in C major",
+  "Upbeat electronic dance track",
+  "Calm ambient meditation music",
+  "Jazz saxophone evening vibe",
+  "Epic orchestral adventure theme",
+];
+
 const MusicPage = () => {
   const proModal = useProModal();
-  const router = useRouter();
   const [music, setMusic] = useState<string>();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -33,23 +40,39 @@ const MusicPage = () => {
 
   const isLoading = form.formState.isSubmitting;
 
+  useKeyboardShortcuts([
+    {
+      key: "k",
+      ctrlKey: true,
+      handler: () => {
+        const input = document.querySelector('input[name="prompt"]') as HTMLInputElement;
+        input?.focus();
+      },
+    },
+  ]);
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setMusic(undefined);
 
       const response = await axios.post('/api/music', values);
-      console.log(response)
 
       setMusic(response.data.audio);
+
       form.reset();
+
+      // Fire-and-forget history save — never blocks the UI on DB latency
+      axios.post('/api/history', {
+        toolType: 'music',
+        prompt: values.prompt,
+        response: response.data.audio,
+      }).catch(() => {});
     } catch (error: any) {
       if (error?.response?.status === 403) {
         proModal.onOpen();
       } else {
         toast.error("Something went wrong.");
       }
-    } finally {
-      router.refresh();
     }
   }
 
@@ -99,22 +122,51 @@ const MusicPage = () => {
             </Button>
           </form>
         </Form>
+        {music === undefined && !isLoading && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {MUSIC_TEMPLATES.map((template) => (
+              <Button
+                key={template}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() => form.setValue("prompt", template)}
+              >
+                {template}
+              </Button>
+            ))}
+          </div>
+        )}
         {isLoading && (
-          <div className="p-20">
-            <Loader />
+          <div className="space-y-4 mt-8">
+            <SkeletonMessage />
+            <SkeletonMessage />
           </div>
         )}
         {!music && !isLoading && (
           <Empty label="No music generated." />
         )}
         {music && (
-          <audio controls className="w-full mt-8">
-            <source src={music} />
-          </audio>
+          <div className="mt-8">
+            <audio controls className="w-full">
+              <source src={music} />
+            </audio>
+            <Button
+              variant="secondary"
+              className="w-full mt-2"
+              onClick={() => {
+                navigator.clipboard.writeText(music);
+                toast.success("URL copied to clipboard");
+              }}
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Copy URL
+            </Button>
+          </div>
         )}
       </div>
     </div>
    );
 }
- 
+  
 export default MusicPage;

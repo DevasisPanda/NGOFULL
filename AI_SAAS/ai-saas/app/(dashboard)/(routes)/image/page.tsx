@@ -5,26 +5,33 @@ import axios from "axios";
 import Image from "next/image";
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Download, ImageIcon } from "lucide-react";
+import { Download, ImageIcon, Copy } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
-import { useRouter } from "next/navigation";
 
 import { Heading } from "@/components/heading";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
-import { Loader } from "@/components/loader";
+import { SkeletonCard } from "@/components/skeleton";
 import { Empty } from "@/components/ui/empty";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useProModal } from "@/hooks/use-pro-modal";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 
 import { amountOptions, formSchema, resolutionOptions } from "./constants";
 
+const IMAGE_TEMPLATES = [
+  "A majestic mountain landscape at sunset",
+  "A futuristic city skyline at night",
+  "A cute cat sitting on a windowsill",
+  "An underwater coral reef with colorful fish",
+  "A cozy coffee shop on a rainy day",
+];
+
 const PhotoPage = () => {
   const proModal = useProModal();
-  const router = useRouter();
   const [photos, setPhotos] = useState<string[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -38,6 +45,17 @@ const PhotoPage = () => {
 
   const isLoading = form.formState.isSubmitting;
 
+  useKeyboardShortcuts([
+    {
+      key: "k",
+      ctrlKey: true,
+      handler: () => {
+        const input = document.querySelector('input[name="prompt"]') as HTMLInputElement;
+        input?.focus();
+      },
+    },
+  ]);
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setPhotos([]);
@@ -47,14 +65,21 @@ const PhotoPage = () => {
       const urls = response.data.map((image: { url: string }) => image.url);
 
       setPhotos(urls);
+
+      form.reset();
+
+      // Fire-and-forget history save — never blocks the UI on DB latency
+      axios.post('/api/history', {
+        toolType: 'image',
+        prompt: values.prompt,
+        response: JSON.stringify(urls),
+      }).catch(() => {});
     } catch (error: any) {
       if (error?.response?.status === 403) {
         proModal.onOpen();
       } else {
         toast.error("Something went wrong.");
       }
-    } finally {
-      router.refresh();
     }
   }
 
@@ -164,9 +189,27 @@ const PhotoPage = () => {
             </Button>
           </form>
         </Form>
+        {photos.length === 0 && !isLoading && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {IMAGE_TEMPLATES.map((template) => (
+              <Button
+                key={template}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() => form.setValue("prompt", template)}
+              >
+                {template}
+              </Button>
+            ))}
+          </div>
+        )}
         {isLoading && (
-          <div className="p-20">
-            <Loader />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
         )}
         {photos.length === 0 && !isLoading && (
@@ -182,10 +225,21 @@ const PhotoPage = () => {
                   src={src}
                 />
               </div>
-              <CardFooter className="p-2">
-                <Button onClick={() => window.open(src)} variant="secondary" className="w-full">
+              <CardFooter className="p-2 flex gap-2">
+                <Button onClick={() => window.open(src)} variant="secondary" className="flex-1">
                   <Download className="h-4 w-4 mr-2" />
                   Download
+                </Button>
+                <Button
+                  onClick={() => {
+                    navigator.clipboard.writeText(src);
+                    toast.success("URL copied to clipboard");
+                  }}
+                  variant="secondary"
+                  className="flex-1"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy URL
                 </Button>
               </CardFooter>
             </Card>
@@ -195,5 +249,5 @@ const PhotoPage = () => {
     </div>
    );
 }
- 
+  
 export default PhotoPage;

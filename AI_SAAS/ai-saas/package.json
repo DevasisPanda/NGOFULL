@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node dev.js",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@clerk/nextjs": "^4.21.15",
+    "@clerk/nextjs": "4.29.3",
     "@hookform/resolvers": "^3.1.1",
     "@prisma/client": "^5.7.1",
     "@radix-ui/react-avatar": "^1.0.3",
@@ -30,10 +30,11 @@
     "clsx": "^1.2.1",
     "cmdk": "^0.2.0",
     "crisp-sdk-web": "^1.0.19",
+    "encoding": "^0.1.13",
     "eslint": "8.44.0",
-    "eslint-config-next": "13.4.9",
+    "eslint-config-next": "^13.5.11",
     "lucide-react": "^0.259.0",
-    "next": "13.4.9",
+    "next": "^13.5.11",
     "next-themes": "^0.2.1",
     "openai": "^4.0.0",
     "postcss": "8.4.25",
@@ -53,6 +54,7 @@
     "zustand": "^4.3.9"
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
     "prisma": "^5.0.0"
   }
 }

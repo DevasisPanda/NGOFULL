@@ -10,20 +10,29 @@ export const incrementApiLimit = async () => {
     return;
   }
 
-  const userApiLimit = await prismadb.userApiLimit.findUnique({
-    where: { userId: userId },
-  });
-
-  if (userApiLimit) {
-    await prismadb.userApiLimit.update({
+  try {
+    const userApiLimit = await prismadb.userApiLimit.findUnique({
       where: { userId: userId },
-      data: { count: userApiLimit.count + 1 },
     });
-  } else {
-    await prismadb.userApiLimit.create({
-      data: { userId: userId, count: 1 },
-    });
+
+    if (userApiLimit) {
+      await prismadb.userApiLimit.update({
+        where: { userId: userId },
+        data: { count: userApiLimit.count + 1 },
+      });
+    } else {
+      await prismadb.userApiLimit.create({
+        data: { userId: userId, count: 1 },
+      });
+    }
+  } catch (error) {
+    console.error("[API_LIMIT_INCREMENT_ERROR]", error);
   }
+};
+
+// Fire-and-forget counter bump — never delays the AI response on DB latency.
+export const bumpApiLimit = () => {
+  incrementApiLimit().catch(() => {});
 };
 
 export const checkApiLimit = async () => {
@@ -33,14 +42,20 @@ export const checkApiLimit = async () => {
     return false;
   }
 
-  const userApiLimit = await prismadb.userApiLimit.findUnique({
-    where: { userId: userId },
-  });
+  try {
+    const userApiLimit = await prismadb.userApiLimit.findUnique({
+      where: { userId: userId },
+    });
 
-  if (!userApiLimit || userApiLimit.count < MAX_FREE_COUNTS) {
+    if (!userApiLimit || userApiLimit.count < MAX_FREE_COUNTS) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.error("[API_LIMIT_CHECK_ERROR]", error);
+    // Fail open if DB is unreachable so the app doesn't block users
     return true;
-  } else {
-    return false;
   }
 };
 
@@ -51,15 +66,20 @@ export const getApiLimitCount = async () => {
     return 0;
   }
 
-  const userApiLimit = await prismadb.userApiLimit.findUnique({
-    where: {
-      userId
-    }
-  });
+  try {
+    const userApiLimit = await prismadb.userApiLimit.findUnique({
+      where: {
+        userId
+      }
+    });
 
-  if (!userApiLimit) {
+    if (!userApiLimit) {
+      return 0;
+    }
+
+    return userApiLimit.count;
+  } catch (error) {
+    console.error("[API_LIMIT_COUNT_ERROR]", error);
     return 0;
   }
-
-  return userApiLimit.count;
 };

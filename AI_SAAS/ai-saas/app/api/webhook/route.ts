@@ -17,8 +17,8 @@ export async function POST(req: Request) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     )
-  } catch (error: any) {
-    return new NextResponse(`Webhook Error: ${error.message}`, { status: 400 })
+  } catch (error) {
+    return new NextResponse("Webhook Error", { status: 400 })
   }
 
   const session = event.data.object as Stripe.Checkout.Session
@@ -30,6 +30,16 @@ export async function POST(req: Request) {
 
     if (!session?.metadata?.userId) {
       return new NextResponse("User id is required", { status: 400 });
+    }
+
+    const existingSubscription = await prismadb.userSubscription.findUnique({
+      where: {
+        userId: session.metadata.userId,
+      },
+    })
+
+    if (existingSubscription) {
+      return new NextResponse(null, { status: 200 })
     }
 
     await prismadb.userSubscription.create({
@@ -49,6 +59,16 @@ export async function POST(req: Request) {
     const subscription = await stripe.subscriptions.retrieve(
       session.subscription as string
     )
+
+    const existingSubscription = await prismadb.userSubscription.findUnique({
+      where: {
+        stripeSubscriptionId: subscription.id,
+      },
+    })
+
+    if (!existingSubscription) {
+      return new NextResponse(null, { status: 200 })
+    }
 
     await prismadb.userSubscription.update({
       where: {

@@ -6,21 +6,29 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
-import { FileAudio } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { VideoIcon } from "lucide-react";
+import { Copy } from "lucide-react";
 
 import { Heading } from "@/components/heading";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
-import { Loader } from "@/components/loader";
+import { SkeletonMessage } from "@/components/skeleton";
 import { Empty } from "@/components/ui/empty";
 import { useProModal } from "@/hooks/use-pro-modal";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 
 import { formSchema } from "./constants";
 
+const VIDEO_TEMPLATES = [
+  "Clown fish swimming in a coral reef",
+  "A drone flying over a snowy mountain",
+  "Sunset timelapse over a city skyline",
+  "A cat playing with a ball of yarn",
+  "Rain falling on a window at night",
+];
+
 const VideoPage = () => {
-  const router = useRouter();
   const proModal = useProModal();
   const [video, setVideo] = useState<string>();
 
@@ -33,6 +41,17 @@ const VideoPage = () => {
 
   const isLoading = form.formState.isSubmitting;
 
+  useKeyboardShortcuts([
+    {
+      key: "k",
+      ctrlKey: true,
+      handler: () => {
+        const input = document.querySelector('input[name="prompt"]') as HTMLInputElement;
+        input?.focus();
+      },
+    },
+  ]);
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setVideo(undefined);
@@ -40,15 +59,21 @@ const VideoPage = () => {
       const response = await axios.post('/api/video', values);
 
       setVideo(response.data[0]);
+
       form.reset();
+
+      // Fire-and-forget history save — never blocks the UI on DB latency
+      axios.post('/api/history', {
+        toolType: 'video',
+        prompt: values.prompt,
+        response: response.data[0],
+      }).catch(() => {});
     } catch (error: any) {
       if (error?.response?.status === 403) {
         proModal.onOpen();
       } else {
         toast.error("Something went wrong.");
       }
-    } finally {
-      router.refresh();
     }
   }
 
@@ -57,7 +82,7 @@ const VideoPage = () => {
       <Heading
         title="Video Generation"
         description="Turn your prompt into video."
-        icon={FileAudio}
+        icon={VideoIcon}
         iconColor="text-orange-700"
         bgColor="bg-orange-700/10"
       />
@@ -98,22 +123,51 @@ const VideoPage = () => {
             </Button>
           </form>
         </Form>
+        {video === undefined && !isLoading && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {VIDEO_TEMPLATES.map((template) => (
+              <Button
+                key={template}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() => form.setValue("prompt", template)}
+              >
+                {template}
+              </Button>
+            ))}
+          </div>
+        )}
         {isLoading && (
-          <div className="p-20">
-            <Loader />
+          <div className="space-y-4 mt-8">
+            <SkeletonMessage />
+            <SkeletonMessage />
           </div>
         )}
         {!video && !isLoading && (
           <Empty label="No video files generated." />
         )}
         {video && (
-          <video controls className="w-full aspect-video mt-8 rounded-lg border bg-black">
-            <source src={video} />
-          </video>
+          <div className="mt-8">
+            <video controls className="w-full aspect-video rounded-lg border bg-black">
+              <source src={video} />
+            </video>
+            <Button
+              variant="secondary"
+              className="w-full mt-2"
+              onClick={() => {
+                navigator.clipboard.writeText(video);
+                toast.success("URL copied to clipboard");
+              }}
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Copy URL
+            </Button>
+          </div>
         )}
       </div>
     </div>
    );
 }
- 
+  
 export default VideoPage;
