@@ -1,16 +1,7 @@
 import { z } from "zod";
 import { router, adminProcedure } from "../_core/trpc";
 
-/**
- * Google Analytics 4 Data API Router
- *
- * All procedures are admin-only. Fetches analytics data from GA4
- * and returns it for the admin dashboard charts.
- *
- * Requires env vars: GA4_PROPERTY_ID, GA4_CLIENT_EMAIL, GA4_PRIVATE_KEY
- */
-
-// Lazy-init the analytics client (only when first called)
+// GA4 Data API Router
 let analyticsClient: any = null;
 
 async function getAnalyticsClient() {

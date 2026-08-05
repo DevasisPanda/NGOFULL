@@ -56,8 +56,7 @@ async function loadTemplateConfig(): Promise<{
               ? JSON.parse(dbTemplate.designJson)
               : dbTemplate.designJson;
             if (Array.isArray(parsed) && parsed.length > 0) {
-              // Dedupe by field id — keep the last occurrence so the
-              // admin's latest edit wins if the builder saved duplicates.
+              // Dedupe fields by id
               const byId = new Map<string, FieldSpec>();
               for (const f of parsed) {
                 if (f && typeof f.id === "string" && f.id) byId.set(f.id, f);
@@ -113,9 +112,7 @@ export async function generateReceiptPDF(fieldValues: Record<string, string>): P
     pdf.setFontSize(fontSize);
     pdf.setTextColor(field.color || "#1e293b");
     pdf.setFont("helvetica", field.weight === "bold" ? "bold" : "normal");
-    // Match CertificateBuilder/VerifiableDocument canvas rendering:
-    // they use ctx.textBaseline = 'middle', so (x,y) is the vertical
-    // center of the text line — use baseline 'middle' to line up exactly.
+    // Align with canvas text baseline
     pdf.text(val, xMm, yMm, { align: field.align || "left", baseline: "middle" });
   }
 
