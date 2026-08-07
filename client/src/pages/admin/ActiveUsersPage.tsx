@@ -5,6 +5,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Trash2, ChevronLeft, ChevronRight, ChevronsUpDown, Eye, FileText, Edit } from "lucide-react";
 import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
@@ -315,6 +316,9 @@ export default function ActiveUsersPage() {
                           <div>
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="font-semibold">{user.membershipNumber || "No Reg"}</span> / {user.name || "N/A"}
+                              {user.role === "admin" && (
+                                <StatusBadge status="admin" email={user.email} />
+                              )}
                               {user.paymentStatus === "paid" ? (
                                 <Badge className="bg-emerald-600 text-white text-[10px] h-4 py-0 px-1.5 font-bold">
                                   Paid (₹{user.amountPaid || "500"})

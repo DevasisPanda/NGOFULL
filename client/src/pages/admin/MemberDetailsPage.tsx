@@ -4,6 +4,7 @@ import { FileText, Award, CreditCard, Share2, User, QrCode, ShieldAlert } from "
 import { format } from "date-fns";
 import { CaptureActions } from "@/components/CaptureActions";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { VerifiableDocument } from "@/components/VerifiableDocument";
 import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -140,6 +141,9 @@ export default function MemberDetailsPage() {
           <div className="flex items-center gap-2 text-gray-800 font-semibold">
             <User className="w-4 h-4" />
             Details Of {member.user?.name || "Member"}
+          </div>
+          <div className="mt-1">
+            <StatusBadge status={member.user?.role} email={member.user?.email} />
           </div>
         </div>
 

@@ -1,21 +1,31 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 
-export type StatusType = "active" | "pending" | "inactive" | "expired" | "rejected" | "paid" | "unpaid" | "exempted" | "admin" | "user" | "staff" | "volunteer";
+export type StatusType = "active" | "pending" | "inactive" | "expired" | "rejected" | "paid" | "unpaid" | "exempted" | "admin" | "system_admin" | "user" | "staff" | "volunteer";
 
 interface StatusBadgeProps {
   status: StatusType | string | null | undefined;
+  email?: string | null;
   className?: string;
 }
 
 /**
  * Standard Status & Role Badge Component
- * Uniform colors, typography, and styling for status indicators across admin and member panels.
+ * Visually distinguishes System Admin (Root Admin) from Normal Admins.
  */
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className = "" }) => {
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, email, className = "" }) => {
   if (!status) return null;
 
   const normalized = status.toLowerCase();
+  const isRootAdmin = email ? (email.toLowerCase().includes("valmikisamaj") || email.toLowerCase() === "admin@ngo.com") : false;
+
+  if (normalized === "system_admin" || (normalized === "admin" && isRootAdmin)) {
+    return (
+      <Badge variant="outline" className={`px-2.5 py-0.5 text-[11px] bg-gradient-to-r from-amber-500 to-amber-600 text-white border-amber-600 font-extrabold shadow-xs inline-flex items-center gap-1 ${className}`}>
+        👑 System Admin
+      </Badge>
+    );
+  }
 
   let variantStyles = "bg-gray-100 text-gray-700 border-gray-200";
 
@@ -41,8 +51,11 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className = ""
       variantStyles = "bg-rose-100 text-rose-800 border-rose-300 font-bold";
       break;
     case "admin":
-      variantStyles = "bg-blue-100 text-blue-900 border-blue-300 font-extrabold uppercase";
-      break;
+      return (
+        <Badge variant="outline" className={`px-2.5 py-0.5 text-[11px] bg-blue-100 text-blue-800 border-blue-300 font-bold inline-flex items-center gap-1 ${className}`}>
+          🛡️ Admin
+        </Badge>
+      );
     case "staff":
     case "volunteer":
       variantStyles = "bg-teal-100 text-teal-900 border-teal-300 font-semibold capitalize";

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Mail, Clock, ChevronsUpDown, ChevronLeft, ChevronRight, Eye, FileText, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -176,8 +177,11 @@ export default function SystemRegistryPage() {
                           }} />
                       </td>
                       <td className="px-3 py-2 border-r border-gray-200 text-gray-800 leading-snug whitespace-normal">
-                        <span className="font-semibold">N/A</span> / {user.name || "N/A"} / <br className="hidden sm:block" />
-                        <span className="text-gray-500">{user.email || "N/A"}</span> / N/A
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold">{user.membershipNumber || "N/A"}</span> / {user.name || "N/A"}
+                          <StatusBadge status={user.role} email={user.email} />
+                        </div>
+                        <span className="text-gray-500 text-xs">{user.email || "N/A"}</span>
                       </td>
                       <td className="px-3 py-2 border-r border-gray-200 text-gray-600">
                         {user.createdAt ? format(new Date(user.createdAt), "dd-MM-yyyy") : "N/A"}
