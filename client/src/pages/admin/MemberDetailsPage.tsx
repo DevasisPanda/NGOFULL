@@ -143,7 +143,7 @@ export default function MemberDetailsPage() {
             Details Of {member.user?.name || "Member"}
           </div>
           <div className="mt-1">
-            <StatusBadge status={member.user?.role} email={member.user?.email} />
+            <StatusBadge status={member.user?.role} isSystemAdmin={member.user?.isSystemAdmin} />
           </div>
         </div>
 

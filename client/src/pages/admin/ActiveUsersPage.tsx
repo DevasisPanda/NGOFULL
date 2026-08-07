@@ -317,7 +317,7 @@ export default function ActiveUsersPage() {
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="font-semibold">{user.membershipNumber || "No Reg"}</span> / {user.name || "N/A"}
                               {user.role === "admin" && (
-                                <StatusBadge status="admin" email={user.email} />
+                                <StatusBadge status="admin" isSystemAdmin={user.isSystemAdmin} />
                               )}
                               {user.paymentStatus === "paid" ? (
                                 <Badge className="bg-emerald-600 text-white text-[10px] h-4 py-0 px-1.5 font-bold">

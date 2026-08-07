@@ -11,14 +11,17 @@ async function addAdmin() {
       throw new Error("Could not connect to database");
     }
 
-    const adminEmails = [
-      "valmikisamajchiritabletrust@gmail.com",
-      "valmikisamajcharitabletrust@gmail.com",
-      "admin@ngo.com",
-      "narayanrathodtnt@gmail.com"
-    ];
-    const password = "StarNgo@2026";
+    const rawEmails = process.env.ROOT_ADMIN_EMAILS || "";
+    const adminEmails = rawEmails.split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+    const password = process.env.ADMIN_SEED_PASSWORD;
     const name = "System Admin";
+
+    if (adminEmails.length === 0) {
+      throw new Error("FATAL: ROOT_ADMIN_EMAILS environment variable is required.");
+    }
+    if (!password) {
+      throw new Error("FATAL: ADMIN_SEED_PASSWORD environment variable is required.");
+    }
 
     console.log("Hashing admin password...");
     const passwordHash = await hashPassword(password);
@@ -55,9 +58,7 @@ async function addAdmin() {
     }
 
     console.log("\n==============================================");
-    console.log("System Admin Credentials Configured Successfully:");
-    console.log("Email    : valmikisamajchiritabletrust@gmail.com");
-    console.log("Password : StarNgo@2026");
+    console.log("System Admin Credentials Configured Successfully");
     console.log("==============================================");
     process.exit(0);
   } catch (error) {

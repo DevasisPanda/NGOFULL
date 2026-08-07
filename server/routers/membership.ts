@@ -8,6 +8,9 @@ import { eq, desc, like, sql, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { paginationInput, generateMembershipNumber, escapeLikePattern } from "../_core/shared";
 import { sendWhatsAppMessage } from "../services/whatsapp";
+import { isRootAdminEmail } from "./admin";
+import { excludePassword } from "../utils/auth";
+
 
 export const membershipRouter = router({
   // Register new member (uses transaction to fix race condition)
@@ -611,8 +614,6 @@ export const membershipRouter = router({
         .where(eq(members.userId, input.userId))
         .limit(1);
 
-      // If user exists but not in members table, we could just fetch user details, 
-      // but for now let's assume this is mostly for members.
       if (result.length === 0) {
         const userOnly = await db.select().from(users).where(eq(users.id, input.userId)).limit(1);
         if (userOnly.length > 0) {
@@ -628,11 +629,22 @@ export const membershipRouter = router({
             paymentTxnId: null,
             amountPaid: null,
             paymentType: null,
-            user: userOnly[0]
+            user: excludePassword(userOnly[0])
           };
         }
       }
 
-      return result.length > 0 ? result[0] : null;
+      if (result.length > 0 && result[0].user) {
+        return {
+          ...result[0],
+          user: {
+            ...result[0].user,
+            isSystemAdmin: isRootAdminEmail(result[0].user.email),
+          }
+        };
+      }
+
+      return null;
+
     }),
 });

@@ -9,30 +9,28 @@ import { excludePassword } from "../utils/auth";
 import { generateMembershipNumber, paginationInput } from "../_core/shared";
 import { logAuditEvent } from "../utils/audit";
 import { sendWhatsAppMessage } from "../services/whatsapp";
+const SYSTEM_ADMIN_EMAILS = [
+  "valmikisamajchiritabletrust@gmail.com",
+  "narayanrathodtnt@gmail.com",
+] as const;
+
 export function getRootAdminEmails(): string[] {
   const envEmails = process.env.ROOT_ADMIN_EMAILS || "";
-  const list = envEmails
+  const envList = envEmails
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
 
-  if (list.length === 0) {
-    return [
-      "valmikisamajchiritabletrust@gmail.com",
-      "valmikisamajcharitabletrust@gmail.com",
-      "admin@ngo.com",
-      "narayanrathodtnt@gmail.com",
-    ];
-  }
-  return list;
+  return Array.from(new Set([...SYSTEM_ADMIN_EMAILS, ...envList]));
 }
 
 export function isRootAdminEmail(email?: string | null): boolean {
   if (!email) return false;
   const normalized = email.toLowerCase().trim();
   const rootList = getRootAdminEmails();
-  return rootList.some((e) => e === normalized) || normalized.includes("valmikisamaj");
+  return rootList.includes(normalized);
 }
+
 
 export const adminRouter = router({
   // Create user with membership (uses transaction to fix race condition)
@@ -55,6 +53,10 @@ export const adminRouter = router({
     .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      if (isRootAdminEmail(input.email)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "System Admin accounts cannot be created via standard user creation." });
+      }
 
       // Check if email exists
       const existingUser = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
@@ -221,7 +223,7 @@ export const adminRouter = router({
       if (targetUser.length === 0) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
 
       if (isRootAdminEmail(targetUser[0].email)) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Primary system admin account is absolute and cannot be deleted." });
+        throw new TRPCError({ code: "FORBIDDEN", message: "Ask Developer for Modifications rather than deleting system Admin" });
       }
 
       if (targetUser[0].role === "admin" && targetUser[0].id <= ctx.user.id && !isRootAdminEmail(ctx.user.email)) {
@@ -292,6 +294,9 @@ export const adminRouter = router({
       if (input.email && input.email !== targetUser[0].email) {
         if (isRootAdminEmail(targetUser[0].email)) {
           throw new TRPCError({ code: "FORBIDDEN", message: "Primary system admin email cannot be changed." });
+        }
+        if (isRootAdminEmail(input.email)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Cannot change an account email to a System Admin email." });
         }
         const emailExists = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
         if (emailExists.length > 0) {

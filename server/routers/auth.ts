@@ -38,27 +38,6 @@ export const authRouter = router({
 
       let user = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
 
-      // Auto-provision admin user if logging in with official admin email
-      if (user.length === 0 && isRootAdminEmail(input.email)) {
-        try {
-          console.log(`[Auth Router] Auto-provisioning admin user for ${input.email}...`);
-          const passwordHash = await hashPassword(input.password || "StarNgo@2026");
-          await db.insert(users).values({
-            email: input.email.toLowerCase(),
-            passwordHash,
-            name: "System Admin",
-            role: "admin",
-            status: "active",
-            membershipType: "regular",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            lastSignedIn: new Date()
-          });
-          user = await db.select().from(users).where(eq(users.email, input.email.toLowerCase())).limit(1);
-        } catch (e) {
-          console.warn("[Auth Router] Auto admin provisioning notice:", e);
-        }
-      }
 
       if (user.length === 0) {
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });

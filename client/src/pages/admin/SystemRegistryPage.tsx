@@ -179,7 +179,7 @@ export default function SystemRegistryPage() {
                       <td className="px-3 py-2 border-r border-gray-200 text-gray-800 leading-snug whitespace-normal">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="font-semibold">{user.membershipNumber || "N/A"}</span> / {user.name || "N/A"}
-                          <StatusBadge status={user.role} email={user.email} />
+                          <StatusBadge status={user.role} isSystemAdmin={user.isSystemAdmin} />
                         </div>
                         <span className="text-gray-500 text-xs">{user.email || "N/A"}</span>
                       </td>

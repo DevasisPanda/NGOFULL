@@ -5,7 +5,7 @@ export type StatusType = "active" | "pending" | "inactive" | "expired" | "reject
 
 interface StatusBadgeProps {
   status: StatusType | string | null | undefined;
-  email?: string | null;
+  isSystemAdmin?: boolean;
   className?: string;
 }
 
@@ -13,19 +13,19 @@ interface StatusBadgeProps {
  * Standard Status & Role Badge Component
  * Visually distinguishes System Admin (Root Admin) from Normal Admins.
  */
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, email, className = "" }) => {
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, isSystemAdmin, className = "" }) => {
   if (!status) return null;
 
   const normalized = status.toLowerCase();
-  const isRootAdmin = email ? (email.toLowerCase().includes("valmikisamaj") || email.toLowerCase() === "admin@ngo.com" || email.toLowerCase() === "narayanrathodtnt@gmail.com") : false;
 
-  if (normalized === "system_admin" || (normalized === "admin" && isRootAdmin)) {
+  if (normalized === "system_admin" || (normalized === "admin" && isSystemAdmin)) {
     return (
       <Badge variant="outline" className={`px-2.5 py-0.5 text-[11px] bg-gradient-to-r from-amber-500 to-amber-600 text-white border-amber-600 font-extrabold shadow-xs inline-flex items-center gap-1 ${className}`}>
         👑 System Admin
       </Badge>
     );
   }
+
 
   let variantStyles = "bg-gray-100 text-gray-700 border-gray-200";
 
