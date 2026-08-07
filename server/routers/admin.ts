@@ -9,6 +9,17 @@ import { excludePassword } from "../utils/auth";
 import { generateMembershipNumber, paginationInput } from "../_core/shared";
 import { logAuditEvent } from "../utils/audit";
 import { sendWhatsAppMessage } from "../services/whatsapp";
+const ROOT_ADMIN_EMAILS = [
+  "valmikisamajchiritabletrust@gmail.com",
+  "valmikisamajcharitabletrust@gmail.com",
+  "admin@ngo.com",
+];
+
+export function isRootAdminEmail(email?: string | null): boolean {
+  if (!email) return false;
+  const normalized = email.toLowerCase().trim();
+  return ROOT_ADMIN_EMAILS.some((e) => e.toLowerCase() === normalized) || normalized.includes("valmikisamaj");
+}
 
 export const adminRouter = router({
   // Create user with membership (uses transaction to fix race condition)
@@ -149,7 +160,6 @@ export const adminRouter = router({
 
       return { success: true };
     }),
-
   // Block user
   blockUser: adminProcedure
     .input(z.object({ userId: z.number() }))
@@ -160,7 +170,11 @@ export const adminRouter = router({
       const targetUser = await db.select().from(users).where(eq(users.id, input.userId)).limit(1);
       if (targetUser.length === 0) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
 
-      if (targetUser[0].role === "admin" && targetUser[0].id <= ctx.user.id) {
+      if (isRootAdminEmail(targetUser[0].email)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Primary system admin account is absolute and cannot be blocked." });
+      }
+
+      if (targetUser[0].role === "admin" && targetUser[0].id <= ctx.user.id && !isRootAdminEmail(ctx.user.email)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Cannot block an admin with equal or higher authority." });
       }
 
@@ -193,7 +207,11 @@ export const adminRouter = router({
       const targetUser = await db.select().from(users).where(eq(users.id, input.userId)).limit(1);
       if (targetUser.length === 0) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
 
-      if (targetUser[0].role === "admin" && targetUser[0].id <= ctx.user.id) {
+      if (isRootAdminEmail(targetUser[0].email)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Primary system admin account is absolute and cannot be deleted." });
+      }
+
+      if (targetUser[0].role === "admin" && targetUser[0].id <= ctx.user.id && !isRootAdminEmail(ctx.user.email)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Cannot delete an admin with equal or higher authority." });
       }
 
@@ -249,7 +267,19 @@ export const adminRouter = router({
       const targetUser = await db.select().from(users).where(eq(users.id, input.userId)).limit(1);
       if (targetUser.length === 0) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
 
+      if (isRootAdminEmail(targetUser[0].email)) {
+        if (input.role && input.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Primary system admin role is absolute and cannot be demoted." });
+        }
+        if (input.status && input.status !== "active") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Primary system admin status must remain active." });
+        }
+      }
+
       if (input.email && input.email !== targetUser[0].email) {
+        if (isRootAdminEmail(targetUser[0].email)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Primary system admin email cannot be changed." });
+        }
         const emailExists = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
         if (emailExists.length > 0) {
           throw new TRPCError({ code: "CONFLICT", message: "Email already in use" });
