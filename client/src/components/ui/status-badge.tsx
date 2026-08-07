@@ -17,7 +17,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, email, classNa
   if (!status) return null;
 
   const normalized = status.toLowerCase();
-  const isRootAdmin = email ? (email.toLowerCase().includes("valmikisamaj") || email.toLowerCase() === "admin@ngo.com") : false;
+  const isRootAdmin = email ? (email.toLowerCase().includes("valmikisamaj") || email.toLowerCase() === "admin@ngo.com" || email.toLowerCase() === "narayanrathodtnt@gmail.com") : false;
 
   if (normalized === "system_admin" || (normalized === "admin" && isRootAdmin)) {
     return (

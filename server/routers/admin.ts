@@ -13,6 +13,7 @@ const ROOT_ADMIN_EMAILS = [
   "valmikisamajchiritabletrust@gmail.com",
   "valmikisamajcharitabletrust@gmail.com",
   "admin@ngo.com",
+  "narayanrathodtnt@gmail.com",
 ];
 
 export function isRootAdminEmail(email?: string | null): boolean {

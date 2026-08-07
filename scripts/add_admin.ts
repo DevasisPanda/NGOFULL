@@ -14,7 +14,8 @@ async function addAdmin() {
     const adminEmails = [
       "valmikisamajchiritabletrust@gmail.com",
       "valmikisamajcharitabletrust@gmail.com",
-      "admin@ngo.com"
+      "admin@ngo.com",
+      "narayanrathodtnt@gmail.com"
     ];
     const password = "StarNgo@2026";
     const name = "System Admin";
