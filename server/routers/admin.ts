@@ -9,17 +9,29 @@ import { excludePassword } from "../utils/auth";
 import { generateMembershipNumber, paginationInput } from "../_core/shared";
 import { logAuditEvent } from "../utils/audit";
 import { sendWhatsAppMessage } from "../services/whatsapp";
-const ROOT_ADMIN_EMAILS = [
-  "valmikisamajchiritabletrust@gmail.com",
-  "valmikisamajcharitabletrust@gmail.com",
-  "admin@ngo.com",
-  "narayanrathodtnt@gmail.com",
-];
+export function getRootAdminEmails(): string[] {
+  const envEmails = process.env.ROOT_ADMIN_EMAILS || "";
+  const list = envEmails
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (list.length === 0) {
+    return [
+      "valmikisamajchiritabletrust@gmail.com",
+      "valmikisamajcharitabletrust@gmail.com",
+      "admin@ngo.com",
+      "narayanrathodtnt@gmail.com",
+    ];
+  }
+  return list;
+}
 
 export function isRootAdminEmail(email?: string | null): boolean {
   if (!email) return false;
   const normalized = email.toLowerCase().trim();
-  return ROOT_ADMIN_EMAILS.some((e) => e.toLowerCase() === normalized) || normalized.includes("valmikisamaj");
+  const rootList = getRootAdminEmails();
+  return rootList.some((e) => e === normalized) || normalized.includes("valmikisamaj");
 }
 
 export const adminRouter = router({

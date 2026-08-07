@@ -39,7 +39,7 @@ export const authRouter = router({
       let user = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
 
       // Auto-provision admin user if logging in with official admin email
-      if (user.length === 0 && (input.email.toLowerCase().includes("valmikisamaj") || input.email === "admin@ngo.com" || input.email.toLowerCase() === "narayanrathodtnt@gmail.com")) {
+      if (user.length === 0 && isRootAdminEmail(input.email)) {
         try {
           console.log(`[Auth Router] Auto-provisioning admin user for ${input.email}...`);
           const passwordHash = await hashPassword(input.password || "StarNgo@2026");
