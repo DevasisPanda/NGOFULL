@@ -350,7 +350,7 @@ export const adminRouter = router({
       if (targetUser.length === 0) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
 
       // Enforce authority check
-      if (targetUser[0].role === "admin" && targetUser[0].id <= ctx.user.id) {
+      if (targetUser[0].role === "admin" && targetUser[0].id <= ctx.user.id && !isRootAdminEmail(ctx.user.email)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Cannot reset password for an admin of equal or higher authority." });
       }
 
