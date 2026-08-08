@@ -21,6 +21,23 @@ async function updateSystemAdmin() {
     const defaultPassword = process.env.ADMIN_SEED_PASSWORD || "ValmikiSamaj@2026";
     const passwordHash = await bcrypt.hash(defaultPassword, 10);
 
+    // Ensure isSystemAdmin column exists in users table
+    console.log("Checking database columns...");
+    const [userCols]: any = await connection.query("SHOW COLUMNS FROM users LIKE 'isSystemAdmin'");
+    if (userCols.length === 0) {
+      console.log("Adding missing column 'isSystemAdmin' to users table...");
+      await connection.query("ALTER TABLE users ADD COLUMN isSystemAdmin TINYINT(1) NOT NULL DEFAULT 0;");
+      console.log("✅ Column 'isSystemAdmin' added to users table.");
+    }
+
+    // Ensure donorId column exists in paymentTransactions table
+    const [ptCols]: any = await connection.query("SHOW COLUMNS FROM paymentTransactions LIKE 'donorId'");
+    if (ptCols.length === 0) {
+      console.log("Adding missing column 'donorId' to paymentTransactions table...");
+      await connection.query("ALTER TABLE paymentTransactions ADD COLUMN donorId INT DEFAULT NULL;");
+      console.log("✅ Column 'donorId' added to paymentTransactions table.");
+    }
+
     console.log(`Checking for user with email: ${oldEmail}...`);
     const [rows]: any = await connection.query("SELECT id, email FROM users WHERE email = ?", [oldEmail]);
 
