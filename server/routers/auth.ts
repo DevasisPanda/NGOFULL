@@ -10,7 +10,6 @@ import crypto from "crypto";
 import { COOKIE_NAME } from "../../shared/const";
 import { generateMembershipNumber } from "../_core/shared";
 import { sendPasswordResetEmail } from "../services/email";
-import { isRootAdminEmail } from "./admin";
 
 const handoffCodes = new Map<string, { token: string, expires: number }>();
 
@@ -50,7 +49,7 @@ export const authRouter = router({
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
       }
 
-      if (isRootAdminEmail(userData.email)) {
+      if (userData.isSystemAdmin) {
         if (userData.status !== "active" || userData.role !== "admin") {
           await db.update(users).set({ status: "active", role: "admin" }).where(eq(users.id, userData.id));
           userData.status = "active";

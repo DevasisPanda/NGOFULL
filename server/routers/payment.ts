@@ -81,6 +81,7 @@ export const paymentRouter = router({
         ),
         purpose: z.string().optional(),
         campaignId: z.number().optional(),
+        donorId: z.number().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -111,6 +112,7 @@ export const paymentRouter = router({
         donorName: input.donorName,
         donorEmail: input.donorEmail,
         donorPhone: input.donorPhone,
+        donorId: input.donorId || null,
         purpose: input.purpose || null,
         campaignId: input.campaignId || null,
       });
@@ -194,6 +196,7 @@ export const paymentRouter = router({
       const [insertResult] = await db
         .insert(donations)
         .values({
+          donorId: txn.donorId || null,
           donorName: txn.donorName,
           donorEmail: txn.donorEmail,
           donorPhone: txn.donorPhone,

@@ -8,7 +8,6 @@ import { eq, desc, like, sql, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { paginationInput, generateMembershipNumber, escapeLikePattern } from "../_core/shared";
 import { sendWhatsAppMessage } from "../services/whatsapp";
-import { isRootAdminEmail } from "./admin";
 import { excludePassword } from "../utils/auth";
 
 
@@ -606,6 +605,7 @@ export const membershipRouter = router({
             city: users.city,
             designation: users.designation,
             role: users.role,
+            isSystemAdmin: users.isSystemAdmin,
             profileImage: users.profileImage,
           }
         })
@@ -635,13 +635,7 @@ export const membershipRouter = router({
       }
 
       if (result.length > 0 && result[0].user) {
-        return {
-          ...result[0],
-          user: {
-            ...result[0].user,
-            isSystemAdmin: isRootAdminEmail(result[0].user.email),
-          }
-        };
+        return result[0];
       }
 
       return null;

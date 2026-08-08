@@ -115,17 +115,25 @@ razorpayWebhookRouter.post("/", async (req: WebhookRequest, res: Response): Prom
             .limit(1);
 
           if (!existingDonation) {
+            // Retrieve donorId from paymentTransactions if available
+            const [txn] = await db
+              .select()
+              .from(paymentTransactions)
+              .where(eq(paymentTransactions.razorpayOrderId, orderId))
+              .limit(1);
+
             const receiptNumber = `RCP-${nanoid(10).toUpperCase()}`;
             await db.insert(donations).values({
-              donorName: notes.donorName || paymentEntity?.notes?.donorName || "Anonymous Donor",
-              donorEmail: notes.donorEmail || paymentEntity?.email || "",
-              donorPhone: notes.donorPhone || paymentEntity?.contact || "",
+              donorId: txn?.donorId || null,
+              donorName: notes.donorName || paymentEntity?.notes?.donorName || txn?.donorName || "Anonymous Donor",
+              donorEmail: notes.donorEmail || paymentEntity?.email || txn?.donorEmail || "",
+              donorPhone: notes.donorPhone || paymentEntity?.contact || txn?.donorPhone || "",
               amount: String(amountInRupees),
               donationType: "online",
               paymentMethod: "razorpay",
               transactionId: paymentId,
               paymentStatus: "completed",
-              purpose: notes.purpose || "General Donation",
+              purpose: notes.purpose || txn?.purpose || "General Donation",
               receiptNumber,
               createdAt: new Date(),
               updatedAt: new Date(),

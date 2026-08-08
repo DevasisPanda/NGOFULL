@@ -8,6 +8,7 @@ interface RazorpayOptions {
   donorName: string;
   donorEmail: string;
   donorPhone?: string;
+  donorId?: number;
   purpose?: string;
   campaignId?: number;
   onSuccess?: (receiptNumber: string) => void;
@@ -54,6 +55,7 @@ export function useRazorpayPayment() {
             donorName: options.donorName,
             donorEmail: options.donorEmail,
             donorPhone: options.donorPhone || undefined,
+            donorId: options.donorId || undefined,
             purpose: options.purpose || undefined,
             campaignId: options.campaignId || undefined,
           },

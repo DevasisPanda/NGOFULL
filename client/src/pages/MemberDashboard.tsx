@@ -92,6 +92,7 @@ export default function MemberDashboard() {
     createOrderMutation.mutate(
       {
         amount: amountNum,
+        donorId: profile?.id,
         donorName: profile?.name || "Valued Member",
         donorEmail: profile?.email || "member@valmikisamajcharitabletrust.org",
         donorPhone: (profile?.phone || "").replace(/\D/g, "").slice(0, 10) || undefined,
