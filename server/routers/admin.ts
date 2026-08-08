@@ -10,7 +10,7 @@ import { generateMembershipNumber, paginationInput } from "../_core/shared";
 import { logAuditEvent } from "../utils/audit";
 import { sendWhatsAppMessage } from "../services/whatsapp";
 const SYSTEM_ADMIN_EMAILS = [
-  "valmikisamajchiritabletrust@gmail.com",
+  "valmikisamajcharitabletrust@gmail.com",
   "narayanrathodtnt@gmail.com",
 ] as const;
 
